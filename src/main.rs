@@ -1,14 +1,30 @@
 #[allow(unused_imports)]
 use std::io::{self, Write};
+use std::fs;
+use std::env;
 
 const BUILTIN_COMMANDS: [&'static str; 3] = ["echo", "exit", "type"];
 
-fn type_command(input: &str){
+fn type_command(input: &str) -> io::Result<()> {
     if BUILTIN_COMMANDS.contains(&input) {
         println!("{} is a shell builtin", input);
-    }else{
-        println!("{} not found", input);
+        return Ok(());
     }
+    let key = "PATH";
+    match env::var_os(key) {
+        Some(paths) => {
+            for path in env::split_paths(&paths) {
+                println!("'{}'", path.display());
+            }
+        },
+        None => {
+            println!("{key} is not defined in the environment.");
+            return Ok(());
+        }
+    }
+
+    println!("{} not found", input);
+    Ok(())
 }
 
 fn main() {
