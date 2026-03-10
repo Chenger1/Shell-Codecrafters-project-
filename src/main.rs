@@ -12,21 +12,10 @@ fn main() {
         input = input.trim().to_string();
         if input == "exit"{
             break;
-        }
-        if input.contains("echo"){
-            let input = input.replace("echo ", "").replace("\n", "");
-            println!("{}", input);
+        }else if input.starts_with("echo"){
+            println!("{}", &input[5..]);
         }else{
             println!("{}: command not found", input);
         }
-
-        // match &input[..] {
-        //     "exit" => break,
-        //     "echo" => {
-        //         let input = input.replace("echo ", "").replace("\n", "");
-        //         println!("{}", input);
-        //     },
-        //     _ => println!("{}: command not found", input)
-        // }
     }
 }
