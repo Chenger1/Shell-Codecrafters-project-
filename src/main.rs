@@ -14,7 +14,10 @@ fn type_command(input: &str) -> io::Result<()> {
     match env::var_os(key) {
         Some(paths) => {
             for path in env::split_paths(&paths) {
-                println!("'{}'", path.file_name().unwrap().to_str().unwrap());
+                let file_name = path.file_name().unwrap().to_str().unwrap();
+                if file_name == input {
+                    println!("{} is {}", input, path.display());
+                }
             }
         },
         None => {
