@@ -1,7 +1,8 @@
 #[allow(unused_imports)]
 use std::io::{self, Write};
-use std::fs;
+use std::path::Path;
 use std::env;
+use std::os::unix::fs::PermissionsExt;
 
 const BUILTIN_COMMANDS: [&'static str; 3] = ["echo", "exit", "type"];
 
@@ -16,9 +17,16 @@ fn type_command(input: &str) -> io::Result<()> {
             for path in env::split_paths(&paths) {
                 let joined = path.join(input);
                 let file_name = joined.to_str().unwrap();
-                println!("{}", file_name);
-                if file_name == input {
-                    println!("{} is {}", input, path.display());
+                // println!("{}", file_name);
+
+                if Path::new(file_name).exists() {
+                    if let Some(executable) = std::fs::metadata(path).ok().map(|m| m.permissions().mode() & 0o111 != 0){
+                        if executable{
+                            println!("{} is {}", input, file_name);
+                            return Ok(())
+                        }
+                    }
+
                 }
             }
         },
