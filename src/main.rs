@@ -12,6 +12,7 @@ fn main() {
         input = input.trim().to_string();
         match &input[..] {
             "exit" => break,
+            "echo" => println!("{}", input),
             _ => println!("{}: command not found", input)
         }
     }
