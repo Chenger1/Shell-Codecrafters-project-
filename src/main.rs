@@ -15,8 +15,9 @@ fn type_command(input: &str) -> io::Result<()> {
         Some(paths) => {
             for path in env::split_paths(&paths) {
                 let file_name = path.file_name().unwrap().to_str().unwrap();
-                println!("{}", path.display());
-                if file_name == input {
+                let executable = format!("{file_name}/{input}");
+                println!("{}", executable);
+                if executable == input {
                     println!("{} is {}", input, path.display());
                 }
             }
