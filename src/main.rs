@@ -20,7 +20,7 @@ fn type_command(input: &str) -> io::Result<()> {
                 // println!("{}", file_name);
 
                 if Path::new(file_name).exists() {
-                    if let Some(executable) = std::fs::metadata(path).ok().map(|m| m.permissions().mode() & 0o111 != 0){
+                    if let Some(executable) = std::fs::metadata(file_name).ok().map(|m| m.permissions().mode() & 0o111 != 0){
                         if executable{
                             println!("{} is {}", input, file_name);
                             return Ok(())
@@ -54,7 +54,7 @@ fn main() {
         }else if input.starts_with("echo"){
             println!("{}", &input[5..]);
         }else if input.starts_with("type"){
-            type_command(&input[5..]);
+            type_command(&input[5..]).unwrap();
         }else{
             println!("{}: command not found", input);
         }
