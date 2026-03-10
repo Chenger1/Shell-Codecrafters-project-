@@ -4,7 +4,7 @@ use std::io::{self, Write};
 const BUILTIN_COMMANDS: [&'static str; 3] = ["echo", "exit", "type"];
 
 fn type_command(input: &String){
-    if BUILTIN_COMMANDS.contains(&input.as_str()) {
+    if BUILTIN_COMMANDS.contains(&&input[5..]) {
         println!("{} is a shell builtin", input);
     }else{
         println!("{} not found", input);
