@@ -1,7 +1,7 @@
 #[allow(unused_imports)]
 use std::io::{self, Write};
 
-const BUILTIN_COMMANDS: [&'static str; 3] = ["echo", "exit", "type";
+const BUILTIN_COMMANDS: [&'static str; 3] = ["echo", "exit", "type"];
 
 fn type_command(input: &String){
     if BUILTIN_COMMANDS.contains(&input.as_str()) {
