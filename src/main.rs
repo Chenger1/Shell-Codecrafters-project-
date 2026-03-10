@@ -14,10 +14,10 @@ fn type_command(input: &str) -> io::Result<()> {
     match env::var_os(key) {
         Some(paths) => {
             for path in env::split_paths(&paths) {
-                let file_name = path.file_name().unwrap().to_str().unwrap();
-                let executable = format!("{file_name}/{input}");
-                println!("{}", executable);
-                if executable == input {
+                let joined = path.join(input);
+                let file_name = joined.to_str().unwrap();
+                println!("{}", file_name);
+                if file_name == input {
                     println!("{} is {}", input, path.display());
                 }
             }
