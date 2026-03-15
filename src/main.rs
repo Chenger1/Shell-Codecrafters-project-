@@ -4,6 +4,7 @@ use std::path::Path;
 use std::env;
 use std::os::unix::fs::PermissionsExt;
 use std::process::Command;
+use std::fs;
 
 const BUILTIN_COMMANDS: [&'static str; 3] = ["echo", "exit", "type"];
 
@@ -64,6 +65,11 @@ fn execute_command(input: &str, arguments: Vec<&str>) -> io::Result<()> {
     Ok(())
 }
 
+fn pwd_command(){
+    let path = fs::canonicalize(".").unwrap();
+    println!("{}", path.to_str().unwrap());
+}
+
 fn parse_arguments(input: &String) -> Vec<&str> {
     let arguments: Vec<&str> = input.split(" ").collect();
     arguments
@@ -80,7 +86,10 @@ fn main() {
         input = input.trim().to_string();
         if input == "exit"{
             break;
-        }else if input.starts_with("echo"){
+        }else if input == "pwd"{
+            pwd_command();
+        }
+        else if input.starts_with("echo"){
             println!("{}", &input[5..]);
         }else if input.starts_with("type"){
             type_command(&input[5..]).unwrap();
