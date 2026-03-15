@@ -66,9 +66,9 @@ fn execute_command(input: &str, arguments: Vec<&str>) -> io::Result<()> {
 }
 
 fn pwd_command(){
-    // let path = fs::canonicalize(".").unwrap();
-    // println!("{}", path.to_str().unwrap());
-    println!("{}", std::env::current_dir().unwrap().display())
+    let path = fs::canonicalize(".").unwrap();
+    println!("{}", path.to_str().unwrap());
+    // println!("{}", std::env::current_dir().unwrap().display())
 }
 
 fn parse_arguments(input: &String) -> Vec<&str> {
