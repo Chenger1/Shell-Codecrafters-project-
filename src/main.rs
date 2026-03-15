@@ -3,6 +3,7 @@ use std::io::{self, Write};
 use std::path::Path;
 use std::env;
 use std::os::unix::fs::PermissionsExt;
+use std::process::Command;
 
 const BUILTIN_COMMANDS: [&'static str; 3] = ["echo", "exit", "type"];
 
@@ -48,6 +49,22 @@ fn type_command(input: &str) -> io::Result<()> {
     Ok(())
 }
 
+fn execute_command(input: &str, arguments: Vec<&str>) -> io::Result<()> {
+    let executable_file_name = is_executable(&input);
+    if let Some(file_name) = executable_file_name {
+        let output = Command::new(file_name).args(arguments).output()?;
+    }else{
+        println!("{}: command not found", input);
+    }
+    Ok(())
+}
+
+fn parse_arguments(input: &String) -> Vec<&str> {
+    let mut arguments: Vec<&str> = input.split(" ").collect();
+   arguments.remove(0);
+    arguments
+}
+
 fn main() {
 
     loop {
@@ -64,7 +81,7 @@ fn main() {
         }else if input.starts_with("type"){
             type_command(&input[5..]).unwrap();
         }else{
-            println!("{}: command not found", input);
+            execute_command(&input, parse_arguments(&input)).unwrap();
         }
     }
 }
