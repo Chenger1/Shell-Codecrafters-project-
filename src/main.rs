@@ -51,7 +51,7 @@ fn type_command(input: &str) -> io::Result<()> {
 
 fn execute_command(input: &str, arguments: Vec<&str>) -> io::Result<()> {
     let executable_file_name = is_executable(&input);
-    if let Some(file_name) = executable_file_name {
+    if let Some(_) = executable_file_name {
         let output = Command::new(input).args(arguments).output()?;
         if output.status.success(){
             io::stdout().write_all(&output.stdout)?;
