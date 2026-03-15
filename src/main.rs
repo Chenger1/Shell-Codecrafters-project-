@@ -53,6 +53,11 @@ fn execute_command(input: &str, arguments: Vec<&str>) -> io::Result<()> {
     let executable_file_name = is_executable(&input);
     if let Some(file_name) = executable_file_name {
         let output = Command::new(file_name).args(arguments).output()?;
+        if output.status.success(){
+            io::stdout().write_all(&output.stdout)?;
+        }else{
+            io::stderr().write_all(&output.stderr)?;
+        }
     }else{
         println!("{}: command not found", input);
     }
