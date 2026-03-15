@@ -6,24 +6,18 @@ use std::os::unix::fs::PermissionsExt;
 
 const BUILTIN_COMMANDS: [&'static str; 3] = ["echo", "exit", "type"];
 
-fn type_command(input: &str) -> io::Result<()> {
-    if BUILTIN_COMMANDS.contains(&input) {
-        println!("{} is a shell builtin", input);
-        return Ok(());
-    }
+fn is_executable(input: &str) -> Option<String> {
     let key = "PATH";
     match env::var_os(key) {
         Some(paths) => {
             for path in env::split_paths(&paths) {
                 let joined = path.join(input);
                 let file_name = joined.to_str().unwrap();
-                // println!("{}", file_name);
 
                 if Path::new(file_name).exists() {
                     if let Some(executable) = std::fs::metadata(file_name).ok().map(|m| m.permissions().mode() & 0o111 != 0){
                         if executable{
-                            println!("{} is {}", input, file_name);
-                            return Ok(())
+                            return Some(file_name.to_string());
                         }
                     }
 
@@ -32,11 +26,25 @@ fn type_command(input: &str) -> io::Result<()> {
         },
         None => {
             println!("{key} is not defined in the environment.");
-            return Ok(());
+            return None;
         }
     }
 
-    println!("{} not found", input);
+    None
+}
+
+fn type_command(input: &str) -> io::Result<()> {
+    if BUILTIN_COMMANDS.contains(&input) {
+        println!("{} is a shell builtin", input);
+        return Ok(());
+    };
+
+    let executable_file_name = is_executable(&input);
+    if let Some(file_name) = executable_file_name {
+        println!("{} is {}", input, file_name);
+    }else{
+        println!("{} not found", input);
+    }
     Ok(())
 }
 
