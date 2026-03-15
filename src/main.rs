@@ -60,8 +60,7 @@ fn execute_command(input: &str, arguments: Vec<&str>) -> io::Result<()> {
 }
 
 fn parse_arguments(input: &String) -> Vec<&str> {
-    let mut arguments: Vec<&str> = input.split(" ").collect();
-   arguments.remove(0);
+    let arguments: Vec<&str> = input.split(" ").collect();
     arguments
 }
 
@@ -81,7 +80,8 @@ fn main() {
         }else if input.starts_with("type"){
             type_command(&input[5..]).unwrap();
         }else{
-            execute_command(&input, parse_arguments(&input)).unwrap();
+            let command = parse_arguments(&input);
+            execute_command(command[0], command[1..].to_vec()).unwrap();
         }
     }
 }
