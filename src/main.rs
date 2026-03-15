@@ -6,7 +6,7 @@ use std::os::unix::fs::PermissionsExt;
 use std::process::Command;
 use std::fs;
 
-const BUILTIN_COMMANDS: [&'static str; 3] = ["echo", "exit", "type"];
+const BUILTIN_COMMANDS: [&'static str; 4] = ["echo", "exit", "type", "pwd"];
 
 fn is_executable(input: &str) -> Option<String> {
     let key = "PATH";
