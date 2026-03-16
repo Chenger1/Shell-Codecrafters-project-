@@ -65,8 +65,6 @@ impl ShellCommand {
             return Ok(())
         }
 
-        self.base_path = path.to_string();
-        self.fs_utils.base_path = path.to_string();
         let new_dir = Path::new(path);
         env::set_current_dir(&new_dir)?;
         Ok(())
