@@ -1,82 +1,76 @@
+use std::fs;
 #[allow(unused_imports)]
 use std::io::{self, Write};
-use std::path::Path;
-use std::env;
-use std::os::unix::fs::PermissionsExt;
 use std::process::Command;
-use std::fs;
 
-const BUILTIN_COMMANDS: [&'static str; 4] = ["echo", "exit", "type", "pwd"];
+pub mod fs_utils;
 
-fn is_executable(input: &str) -> Option<String> {
-    let key = "PATH";
-    match env::var_os(key) {
-        Some(paths) => {
-            for path in env::split_paths(&paths) {
-                let joined = path.join(input);
-                let file_name = joined.to_str().unwrap();
+const BUILTIN_COMMANDS: [&'static str; 5] = ["echo", "exit", "type", "pwd", "cd"];
 
-                if Path::new(file_name).exists() {
-                    if let Some(executable) = std::fs::metadata(file_name).ok().map(|m| m.permissions().mode() & 0o111 != 0){
-                        if executable{
-                            return Some(file_name.to_string());
-                        }
-                    }
+struct ShellCommand {
+    base_path: String,
+    fs_utils: fs_utils::FSUtils
+}
 
-                }
+impl ShellCommand {
+    pub fn new() -> Self{
+        let utils = fs_utils::FSUtils::new();
+        ShellCommand { base_path: String::from("/") , fs_utils: utils}
+    }
+    
+    pub fn echo(&self, input: &str){
+        println!("{}", input);
+    }
+
+    pub fn pwd(&self){
+        let path = fs::canonicalize(".").unwrap();
+        println!("{}", path.to_str().unwrap());
+    }
+
+    pub fn execute(&self, input: &str, arguments: Vec<&str>) -> io::Result<()>{
+        let executable_file_name = self.fs_utils.is_executable(&input);
+        if let Some(_) = executable_file_name {
+            let output = Command::new(input).args(arguments).output()?;
+            if output.status.success() {
+                io::stdout().write_all(&output.stdout)?;
+            } else {
+                io::stderr().write_all(&output.stderr)?;
             }
-        },
-        None => {
-            println!("{key} is not defined in the environment.");
-            return None;
+        } else {
+            println!("{}: command not found", input);
         }
+        Ok(())
     }
 
-    None
-}
-
-fn type_command(input: &str) -> io::Result<()> {
-    if BUILTIN_COMMANDS.contains(&input) {
-        println!("{} is a shell builtin", input);
-        return Ok(());
-    };
-
-    let executable_file_name = is_executable(&input);
-    if let Some(file_name) = executable_file_name {
-        println!("{} is {}", input, file_name);
-    }else{
-        println!("{} not found", input);
-    }
-    Ok(())
-}
-
-fn execute_command(input: &str, arguments: Vec<&str>) -> io::Result<()> {
-    let executable_file_name = is_executable(&input);
-    if let Some(_) = executable_file_name {
-        let output = Command::new(input).args(arguments).output()?;
-        if output.status.success(){
-            io::stdout().write_all(&output.stdout)?;
-        }else{
-            io::stderr().write_all(&output.stderr)?;
+    pub fn type_(&self, input: &str) -> io::Result<()>{
+        if BUILTIN_COMMANDS.contains(&input) {
+            println!("{} is a shell builtin", input);
+            return Ok(());
+        };
+        
+        let executable_file_name = self.fs_utils.is_executable(&input);
+        if let Some(file_name) = executable_file_name {
+            println!("{} is {}", input, file_name);
+        } else {
+            println!("{} not found", input);
         }
-    }else{
-        println!("{}: command not found", input);
+        Ok(())
     }
-    Ok(())
+
+    pub fn cd(&mut self, path: &str){
+        self.base_path = path.to_string();
+    }
+
 }
 
-fn pwd_command(){
-    let path = fs::canonicalize(".").unwrap();
-    println!("{}", path.to_str().unwrap());
-    // println!("{}", std::env::current_dir().unwrap().display())
-}
-
+// utils
 fn parse_arguments(input: &String) -> Vec<&str> {
     let arguments: Vec<&str> = input.split(" ").collect();
     arguments
 }
 
 fn main() {
+    let mut shell_command = ShellCommand::new();
 
     loop {
         print!("$ ");
@@ -85,18 +79,14 @@ fn main() {
         let mut input = String::new();
         io::stdin().read_line(&mut input).unwrap();
         input = input.trim().to_string();
-        if input == "exit"{
-            break;
-        }else if input == "pwd"{
-            pwd_command();
-        }
-        else if input.starts_with("echo"){
-            println!("{}", &input[5..]);
-        }else if input.starts_with("type"){
-            type_command(&input[5..]).unwrap();
-        }else{
-            let command = parse_arguments(&input);
-            execute_command(command[0], command[1..].to_vec()).unwrap();
+        let command = parse_arguments(&input);
+        match command[0] {
+            "exit" => break,
+            "pwd" => shell_command.pwd(),
+            "echo" => shell_command.echo(&input[5..]),
+            "type" => shell_command.type_(&input).unwrap(),
+            "cd" => shell_command.cd(&input),
+            _ => shell_command.execute(command[0], command[1..].to_vec()).unwrap()
         }
     }
 }
