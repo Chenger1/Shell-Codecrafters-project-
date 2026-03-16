@@ -1,7 +1,8 @@
-use std::fs;
+use std::{env, fs};
 #[allow(unused_imports)]
 use std::io::{self, Write};
 use std::process::Command;
+use std::path::Path;
 
 pub mod fs_utils;
 
@@ -57,14 +58,18 @@ impl ShellCommand {
         Ok(())
     }
 
-    pub fn cd(&mut self, path: &str){
-        if !self.fs_utils.is_exist(path, true){
+    pub fn cd(&mut self, path: &str) -> std::io::Result<()>{
+        let is_absolute = Path::new(path).is_absolute();
+        if !self.fs_utils.is_exist(path, is_absolute){
             println!("cd: {}: No such file or directory", path);
-            return
+            return Ok(())
         }
 
         self.base_path = path.to_string();
         self.fs_utils.base_path = path.to_string();
+        let new_dir = Path::new(path);
+        env::set_current_dir(&new_dir)?;
+        Ok(())
     }
 
 }
