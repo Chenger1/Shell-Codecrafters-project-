@@ -90,7 +90,7 @@ fn main() {
             "exit" => break,
             "pwd" => shell_command.pwd(),
             "echo" => shell_command.echo(&input[5..]),
-            "type" => shell_command.type_(&input).unwrap(),
+            "type" => shell_command.type_(command[0]).unwrap(),
             "cd" => shell_command.cd(command[1]),
             _ => shell_command.execute(command[0], command[1..].to_vec()).unwrap()
         }
