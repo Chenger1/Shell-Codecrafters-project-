@@ -3,12 +3,12 @@ use std::os::unix::fs::PermissionsExt;
 use std::path::Path;
 
 pub struct FSUtils{
-    base_path: String
+    pub base_path: String
 }
 
 impl FSUtils{
     pub fn new() -> Self{
-        FSUtils { base_path: String::from("/") }
+        FSUtils { base_path: String::from(".") }
     }
 
     pub fn is_executable(&self, input: &str) -> Option<String>{
@@ -38,5 +38,15 @@ impl FSUtils{
         }
         
         None
+    }
+
+    pub fn is_exist(&self, path: &str, absolute: bool) -> bool{
+        let full_path;
+        if absolute{
+            full_path = path;
+        }else{
+            full_path = path;
+        }
+        Path::new(full_path).exists()
     }
 }

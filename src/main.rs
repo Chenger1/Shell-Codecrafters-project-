@@ -15,7 +15,7 @@ struct ShellCommand {
 impl ShellCommand {
     pub fn new() -> Self{
         let utils = fs_utils::FSUtils::new();
-        ShellCommand { base_path: String::from("/") , fs_utils: utils}
+        ShellCommand { base_path: String::from(".") , fs_utils: utils}
     }
     
     pub fn echo(&self, input: &str){
@@ -23,7 +23,7 @@ impl ShellCommand {
     }
 
     pub fn pwd(&self){
-        let path = fs::canonicalize(".").unwrap();
+        let path = fs::canonicalize(self.base_path.clone()).unwrap();
         println!("{}", path.to_str().unwrap());
     }
 
@@ -58,7 +58,13 @@ impl ShellCommand {
     }
 
     pub fn cd(&mut self, path: &str){
+        if !self.fs_utils.is_exist(path, true){
+            println!("cd: {}: No such file or directory", path);
+            return
+        }
+
         self.base_path = path.to_string();
+        self.fs_utils.base_path = path.to_string();
     }
 
 }
