@@ -96,7 +96,7 @@ fn main() {
             "pwd" => shell_command.pwd(),
             "echo" => shell_command.echo(&input[5..]),
             "type" => shell_command.type_(command[1]).unwrap(),
-            "cd" => shell_command.cd(command[1]),
+            "cd" => shell_command.cd(command[1]).unwrap(),
             _ => shell_command.execute(command[0], command[1..].to_vec()).unwrap()
         }
     }
