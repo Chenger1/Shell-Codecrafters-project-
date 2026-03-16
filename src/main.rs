@@ -9,14 +9,13 @@ pub mod fs_utils;
 const BUILTIN_COMMANDS: [&'static str; 5] = ["echo", "exit", "type", "pwd", "cd"];
 
 struct ShellCommand {
-    base_path: String,
     fs_utils: fs_utils::FSUtils
 }
 
 impl ShellCommand {
     pub fn new() -> Self{
         let utils = fs_utils::FSUtils::new();
-        ShellCommand { base_path: String::from(".") , fs_utils: utils}
+        ShellCommand { fs_utils: utils}
     }
     
     pub fn echo(&self, input: &str){

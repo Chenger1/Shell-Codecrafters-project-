@@ -3,12 +3,11 @@ use std::os::unix::fs::PermissionsExt;
 use std::path::Path;
 
 pub struct FSUtils{
-    pub base_path: String
 }
 
 impl FSUtils{
     pub fn new() -> Self{
-        FSUtils { base_path: String::from(".") }
+        FSUtils {  }
     }
 
     pub fn is_executable(&self, input: &str) -> Option<String>{
