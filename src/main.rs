@@ -24,6 +24,7 @@ impl ShellCommand {
     }
 
     pub fn pwd(&self){
+        println!("{}", self.base_path);
         let path = fs::canonicalize(self.base_path.clone()).unwrap();
         println!("{}", path.to_str().unwrap());
     }
