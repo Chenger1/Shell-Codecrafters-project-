@@ -1,21 +1,21 @@
-use std::fs;
+use std::{env, fs};
 #[allow(unused_imports)]
 use std::io::{self, Write};
 use std::process::Command;
+use std::path::Path;
 
 pub mod fs_utils;
 
 const BUILTIN_COMMANDS: [&'static str; 5] = ["echo", "exit", "type", "pwd", "cd"];
 
 struct ShellCommand {
-    base_path: String,
     fs_utils: fs_utils::FSUtils
 }
 
 impl ShellCommand {
     pub fn new() -> Self{
         let utils = fs_utils::FSUtils::new();
-        ShellCommand { base_path: String::from(".") , fs_utils: utils}
+        ShellCommand { fs_utils: utils}
     }
     
     pub fn echo(&self, input: &str){
@@ -23,7 +23,7 @@ impl ShellCommand {
     }
 
     pub fn pwd(&self){
-        let path = fs::canonicalize(self.base_path.clone()).unwrap();
+        let path = fs::canonicalize(".").unwrap();
         println!("{}", path.to_str().unwrap());
     }
 
@@ -57,14 +57,16 @@ impl ShellCommand {
         Ok(())
     }
 
-    pub fn cd(&mut self, path: &str){
-        if !self.fs_utils.is_exist(path, true){
+    pub fn cd(&mut self, path: &str) -> std::io::Result<()>{
+        let is_absolute = Path::new(path).is_absolute();
+        if !self.fs_utils.is_exist(path, is_absolute){
             println!("cd: {}: No such file or directory", path);
-            return
+            return Ok(())
         }
 
-        self.base_path = path.to_string();
-        self.fs_utils.base_path = path.to_string();
+        let new_dir = Path::new(path);
+        env::set_current_dir(&new_dir)?;
+        Ok(())
     }
 
 }
@@ -91,7 +93,7 @@ fn main() {
             "pwd" => shell_command.pwd(),
             "echo" => shell_command.echo(&input[5..]),
             "type" => shell_command.type_(command[1]).unwrap(),
-            "cd" => shell_command.cd(command[1]),
+            "cd" => shell_command.cd(command[1]).unwrap(),
             _ => shell_command.execute(command[0], command[1..].to_vec()).unwrap()
         }
     }
