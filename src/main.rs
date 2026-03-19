@@ -1,9 +1,7 @@
 use std::{env, fs};
-use std::{env, fs};
 #[allow(unused_imports)]
 use std::io::{self, Write};
 use std::process::Command;
-use std::path::Path;
 use std::path::Path;
 
 pub mod fs_utils;
@@ -17,7 +15,6 @@ struct ShellCommand {
 impl ShellCommand {
     pub fn new() -> Self{
         let utils = fs_utils::FSUtils::new();
-        ShellCommand { fs_utils: utils}
         ShellCommand { fs_utils: utils}
     }
     
