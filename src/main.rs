@@ -131,7 +131,7 @@ fn parse_arguments(input: &String) -> Vec<String> {
     // println!("{:?}", commands);
 
     let filtered: Vec<String> = commands.into_iter().filter(|x| x != "").collect();
-    println!("{:?}", filtered);
+    // println!("{:?}", filtered);
     filtered
 }
 
