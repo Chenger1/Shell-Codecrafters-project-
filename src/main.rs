@@ -89,9 +89,9 @@ fn parse_arguments(input: &String) -> Vec<String> {
     // echo 'world     hello' 'test''example' script''shell
 
     for c in cleaned.chars(){
-        println!("{:?}", new_input);
-        println!("{:?}", commands);
-        print!("------------\n");
+        // println!("{:?}", new_input);
+        // println!("{:?}", commands);
+        // print!("------------\n");
         if c == '\''{
             if is_quoted{
                 is_quoted = false;
@@ -134,11 +134,11 @@ fn parse_arguments(input: &String) -> Vec<String> {
         word = word.trim().to_string();
         commands.push(word);
     }
-    println!("{:?}", new_input);
-    println!("{:?}", commands);
+    // println!("{:?}", new_input);
+    // println!("{:?}", commands);
 
     let filtered: Vec<String> = commands.into_iter().filter(|x| x != "").collect();
-    println!("{:?}", filtered);
+    // println!("{:?}", filtered);
     filtered
 }
 
