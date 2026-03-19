@@ -58,13 +58,19 @@ impl ShellCommand {
     }
 
     pub fn cd(&mut self, path: &str) -> std::io::Result<()>{
-        let is_absolute = Path::new(path).is_absolute();
-        if !self.fs_utils.is_exist(path, is_absolute){
-            println!("cd: {}: No such file or directory", path);
+        let mut desired_path = path.to_string();
+        if path == "~"{
+            let home = env::var("HOME").unwrap();
+            desired_path = home;
+        }
+
+        let is_absolute = Path::new(&desired_path).is_absolute();
+        if !self.fs_utils.is_exist(&desired_path, is_absolute){
+            println!("cd: {}: No such file or directory", desired_path);
             return Ok(())
         }
 
-        let new_dir = Path::new(path);
+        let new_dir = Path::new(&desired_path);
         env::set_current_dir(&new_dir)?;
         Ok(())
     }
