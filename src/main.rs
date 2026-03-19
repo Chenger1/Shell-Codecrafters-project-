@@ -78,9 +78,13 @@ impl ShellCommand {
 }
 
 // utils
+fn clean_input(input: &String) -> String{
+    let cleaned = input.trim().replace("'", "");
+    cleaned
+}
+
 fn parse_arguments(input: &String) -> Vec<String> {
-    let cleaned = input.replace("'", "");
-    let arguments: Vec<&str> = cleaned.split(" ").collect();
+    let arguments: Vec<&str> = input .split(" ").collect();
     arguments.into_iter().map(|x| x.replace("'", "")).collect()
 }
 
@@ -93,7 +97,7 @@ fn main() {
 
         let mut input = String::new();
         io::stdin().read_line(&mut input).unwrap();
-        input = input.trim().to_string();
+        input = clean_input(&input);
         let command = parse_arguments(&input);
         match command[0].as_str() {
             "exit" => break,
