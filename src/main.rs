@@ -93,38 +93,31 @@ fn parse_arguments(input: &String) -> Vec<String> {
         // println!("{:?}", commands);
         // print!("------------\n");
         if c == '\''{
-            if is_quoted{
-                is_quoted = false;
-                let word: String = new_input.into_iter().collect();
-                commands.push(word);
-                new_input = vec![];
-                continue
-            }else{
-                is_quoted = true;
-                whitepace = false;
-                continue
-            }
+            is_quoted = if is_quoted == true {false} else {true};
+            continue;
         }
-        
+
         if c.is_ascii_whitespace(){
             if is_quoted{
                 new_input.push(c);
                 continue
-            }else{
-                if !whitepace{
-                    whitepace = true;
-                    if new_input.len() > 0 && new_input[0] != '\0'{
-                        let word: String = new_input.into_iter().collect();
-                        commands.push(word);
-                        new_input = vec![];
-                    }else{
-                        commands.push(String::from(" "));
-                    }
-                    continue
+            };
+
+            if !whitepace{
+                whitepace = true;
+                let mut word: String = new_input.clone().into_iter().collect();
+                word = word.trim().to_string();
+                commands.push(word);
+                if commands.len() > 1{
+                    commands.push(String::from(" "));
                 }
-                continue
+                new_input = vec![];
+                continue;
             }
+
+            continue
         }
+
         whitepace = false;
         new_input.push(c);
 
