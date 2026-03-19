@@ -83,22 +83,29 @@ fn parse_arguments(input: &String) -> Vec<String> {
     let cleaned = input.trim();
     let mut new_input: Vec<char> = vec![];
     let mut is_quoted = false;
+    let mut whitepace = false;
     for c in cleaned.chars(){
         if c == '\''{
             is_quoted = if is_quoted == true {false} else {true};
             continue
         }
-
-        if c == ' ' && is_quoted{
+        if c == ' '{
+            if !whitepace{
+                whitepace = true;
+                new_input.push(c);
+                continue;
+            }
+            
+            if is_quoted{
+                new_input.push(c);
+                continue
+            }
+        }else{
+            whitepace = false;
             new_input.push(c);
-            continue
         }
-
-        new_input.push(c);
-
     };
     let cleaned: String = new_input.into_iter().collect();
-    println!("Cleaned: {}", cleaned);
     let arguments: Vec<&str> = cleaned.split(" ").collect();
     arguments.into_iter().map(|x| x.to_string()).collect()
 }
