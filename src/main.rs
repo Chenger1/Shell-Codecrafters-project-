@@ -79,7 +79,8 @@ impl ShellCommand {
 
 // utils
 fn parse_arguments(input: &String) -> Vec<String> {
-    let arguments: Vec<&str> = input.split(" ").collect();
+    let cleaned = input.replace("'", "");
+    let arguments: Vec<&str> = cleaned.split(" ").collect();
     arguments.into_iter().map(|x| x.replace("'", "")).collect()
 }
 
