@@ -82,58 +82,84 @@ impl ShellCommand {
 fn parse_arguments(input: &String) -> Vec<String> {
     let cleaned = input.trim();
     let mut commands: Vec<String> = vec![];
-    let mut new_input: Vec<char> = vec![];
+    let mut current_command = String::new();
     let mut is_quoted = false;
-    let mut whitepace = false;
-
-    // echo 'world     hello' 'test''example' script''shell
+    let mut in_whitespace = false;
 
     for c in cleaned.chars(){
-        // println!("{:?}", new_input);
-        // println!("{:?}", commands);
-        // print!("------------\n");
         if c == '\''{
-            is_quoted = if is_quoted == true {false} else {true};
+            is_quoted = !is_quoted;
             continue;
         }
 
         if c.is_ascii_whitespace(){
             if is_quoted{
-                new_input.push(c);
-                continue
+                current_command.push(c);
+            }else if !in_whitespace{
+                in_whitespace = true;
+                commands.push(current_command);
+                current_command = String::new();
             };
-
-            if !whitepace{
-                whitepace = true;
-                let mut word: String = new_input.clone().into_iter().collect();
-                word = word.trim().to_string();
-                commands.push(word);
-                // if commands.len() > 1{
-                    // commands.push(String::from(" "));
-                // }
-                new_input = vec![];
-                continue;
-            }
-
             continue
         }
 
-        whitepace = false;
-        new_input.push(c);
+        in_whitespace = false;
+        current_command.push(c);
 
     }
-    if new_input.len() > 0{
-        let mut word: String = new_input.clone().into_iter().collect();
-        word = word.trim().to_string();
-        commands.push(word);
+    if current_command.len() > 0{
+        commands.push(current_command);
     }
-    // println!("{:?}", new_input);
-    // println!("{:?}", commands);
 
-    let filtered: Vec<String> = commands.into_iter().filter(|x| x != "").collect();
-    // println!("{:?}", filtered);
-    filtered
+    // let filtered: Vec<String> = commands.into_iter().filter(|x| x != "").collect();
+    // filtered
+    commands
 }
+
+// fn parse_arguments(input: &String) -> Vec<String> {
+//     let cleaned = input.trim();
+//     let mut commands: Vec<String> = vec![];
+//     let mut new_input: Vec<char> = vec![];
+//     let mut is_quoted = false;
+//     let mut whitepace = false;
+
+//     for c in cleaned.chars(){
+//         if c == '\''{
+//             is_quoted = if is_quoted == true {false} else {true};
+//             continue;
+//         }
+
+//         if c.is_ascii_whitespace(){
+//             if is_quoted{
+//                 new_input.push(c);
+//                 continue
+//             };
+
+//             if !whitepace{
+//                 whitepace = true;
+//                 let mut word: String = new_input.clone().into_iter().collect();
+//                 word = word.trim().to_string();
+//                 commands.push(word);
+//                 new_input = vec![];
+//                 continue;
+//             }
+
+//             continue
+//         }
+
+//         whitepace = false;
+//         new_input.push(c);
+
+//     }
+//     if new_input.len() > 0{
+//         let mut word: String = new_input.clone().into_iter().collect();
+//         word = word.trim().to_string();
+//         commands.push(word);
+//     }
+
+//     let filtered: Vec<String> = commands.into_iter().filter(|x| x != "").collect();
+//     filtered
+// }
 
 fn main() {
     let mut shell_command = ShellCommand::new();
