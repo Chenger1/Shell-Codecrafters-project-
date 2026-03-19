@@ -85,12 +85,13 @@ fn parse_arguments(input: &String) -> Vec<String> {
     let mut is_quoted = false;
     for c in cleaned.chars(){
         if c == '\''{
-            is_quoted = true;
+            is_quoted = if is_quoted == true {false} else {true};
             continue
         }
 
         if c == ' ' && is_quoted{
             new_input.push(c);
+            continue
         }
 
         new_input.push(c);
