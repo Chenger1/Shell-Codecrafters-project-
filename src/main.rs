@@ -98,7 +98,6 @@ fn parse_arguments(input: &String) -> Vec<String> {
 
     };
     let cleaned: String = new_input.into_iter().collect();
-    println!("Cleaned: {}", cleaned);
     let arguments: Vec<&str> = cleaned.split(" ").collect();
     arguments.into_iter().map(|x| x.to_string()).collect()
 }
@@ -116,7 +115,7 @@ fn main() {
         match command[0].as_str() {
             "exit" => break,
             "pwd" => shell_command.pwd(),
-            "echo" => shell_command.echo(command[5..].to_vec()),
+            "echo" => shell_command.echo(command[1..].to_vec()),
             "type" => shell_command.type_(&command[1]).unwrap(),
             "cd" => shell_command.cd(&command[1]).unwrap(),
             _ => shell_command.execute(&command[0], command[1..].to_vec()).unwrap()
