@@ -18,8 +18,9 @@ impl ShellCommand {
         ShellCommand { fs_utils: utils}
     }
     
-    pub fn echo(&self, input: &str){
-        println!("{}", input);
+    pub fn echo(&self, input: Vec<String>){
+        let str_ = input.join(" ");
+        println!("{}", str_);
     }
 
     pub fn pwd(&self){
@@ -78,14 +79,26 @@ impl ShellCommand {
 }
 
 // utils
-fn clean_input(input: &String) -> String{
-    let cleaned = input.trim().replace("'", "");
-    cleaned
-}
-
 fn parse_arguments(input: &String) -> Vec<String> {
-    let arguments: Vec<&str> = input .split(" ").collect();
-    arguments.into_iter().map(|x| x.replace("'", "")).collect()
+    let cleaned = input.trim();
+    let mut new_input: Vec<char> = vec![];
+    let mut is_quoted = false;
+    for c in cleaned.chars(){
+        if c == '\''{
+            is_quoted = true;
+            continue
+        }
+
+        if c == ' ' && is_quoted{
+            new_input.push(c);
+        }
+
+        new_input.push(c);
+
+    };
+    let cleaned: String = new_input.into_iter().collect();
+    let arguments: Vec<&str> = cleaned.split(" ").collect();
+    arguments.into_iter().map(|x| x.to_string()).collect()
 }
 
 fn main() {
@@ -97,12 +110,11 @@ fn main() {
 
         let mut input = String::new();
         io::stdin().read_line(&mut input).unwrap();
-        input = clean_input(&input);
         let command = parse_arguments(&input);
         match command[0].as_str() {
             "exit" => break,
             "pwd" => shell_command.pwd(),
-            "echo" => shell_command.echo(&input[5..]),
+            "echo" => shell_command.echo(command[5..].to_vec()),
             "type" => shell_command.type_(&command[1]).unwrap(),
             "cd" => shell_command.cd(&command[1]).unwrap(),
             _ => shell_command.execute(&command[0], command[1..].to_vec()).unwrap()
