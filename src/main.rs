@@ -19,7 +19,7 @@ impl ShellCommand {
     }
     
     pub fn echo(&self, input: Vec<String>){
-        let str_ = input.join(" ");
+        let str_ = input.join("");
         println!("{}", str_);
     }
 
@@ -85,8 +85,8 @@ fn parse_arguments(input: &String) -> Vec<String> {
     let mut new_input: Vec<char> = vec![];
     let mut is_quoted = false;
     let mut whitepace = false;
-    
-    // cat '/tmp/rat/f   49' '/tmp/rat/f   74' '/tmp/rat/f   62'
+
+    // echo 'world     hello' 'test''example' script''shell
 
     for c in cleaned.chars(){
         println!("{:?}", new_input);
@@ -95,13 +95,13 @@ fn parse_arguments(input: &String) -> Vec<String> {
         if c == '\''{
             if is_quoted{
                 is_quoted = false;
-                let mut word: String = new_input.into_iter().collect();
-                word = word.trim().to_string();
+                let word: String = new_input.into_iter().collect();
                 commands.push(word);
                 new_input = vec![];
                 continue
             }else{
                 is_quoted = true;
+                whitepace = false;
                 continue
             }
         }
@@ -113,10 +113,13 @@ fn parse_arguments(input: &String) -> Vec<String> {
             }else{
                 if !whitepace{
                     whitepace = true;
-                    let mut word: String = new_input.into_iter().collect();
-                    word = word.trim().to_string();
-                    commands.push(word);
-                    new_input = vec![];
+                    if new_input.len() > 0 && new_input[0] != '\0'{
+                        let word: String = new_input.into_iter().collect();
+                        commands.push(word);
+                        new_input = vec![];
+                    }else{
+                        commands.push(String::from(" "));
+                    }
                     continue
                 }
                 continue
