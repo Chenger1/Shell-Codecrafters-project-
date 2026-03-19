@@ -98,6 +98,7 @@ fn parse_arguments(input: &String) -> Vec<String> {
 
     };
     let cleaned: String = new_input.into_iter().collect();
+    println!("Cleaned: {}", cleaned);
     let arguments: Vec<&str> = cleaned.split(" ").collect();
     arguments.into_iter().map(|x| x.to_string()).collect()
 }
