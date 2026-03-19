@@ -105,7 +105,8 @@ fn parse_arguments(input: &String) -> Vec<String> {
             new_input.push(c);
         }
     };
-    let cleaned: String = new_input.into_iter().collect();
+    let mut cleaned: String = new_input.into_iter().collect();
+    println!("{}", cleaned);
     let arguments: Vec<&str> = cleaned.split(" ").collect();
     arguments.into_iter().map(|x| x.to_string()).collect()
 }
