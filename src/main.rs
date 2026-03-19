@@ -1,7 +1,9 @@
 use std::{env, fs};
+use std::{env, fs};
 #[allow(unused_imports)]
 use std::io::{self, Write};
 use std::process::Command;
+use std::path::Path;
 use std::path::Path;
 
 pub mod fs_utils;
@@ -16,6 +18,7 @@ impl ShellCommand {
     pub fn new() -> Self{
         let utils = fs_utils::FSUtils::new();
         ShellCommand { fs_utils: utils}
+        ShellCommand { fs_utils: utils}
     }
     
     pub fn echo(&self, input: &str){
@@ -23,6 +26,7 @@ impl ShellCommand {
     }
 
     pub fn pwd(&self){
+        let path = fs::canonicalize(".").unwrap();
         let path = fs::canonicalize(".").unwrap();
         println!("{}", path.to_str().unwrap());
     }
@@ -99,6 +103,7 @@ fn main() {
             "pwd" => shell_command.pwd(),
             "echo" => shell_command.echo(&input[5..]),
             "type" => shell_command.type_(command[1]).unwrap(),
+            "cd" => shell_command.cd(command[1]).unwrap(),
             "cd" => shell_command.cd(command[1]).unwrap(),
             _ => shell_command.execute(command[0], command[1..].to_vec()).unwrap()
         }
