@@ -27,7 +27,7 @@ impl ShellCommand {
         println!("{}", path.to_str().unwrap());
     }
 
-    pub fn execute(&self, input: &str, arguments: Vec<&str>) -> io::Result<()>{
+    pub fn execute(&self, input: &String, arguments: Vec<String>) -> io::Result<()>{
         let executable_file_name = self.fs_utils.is_executable(&input);
         if let Some(_) = executable_file_name {
             let output = Command::new(input).args(arguments).output()?;
@@ -42,8 +42,8 @@ impl ShellCommand {
         Ok(())
     }
 
-    pub fn type_(&self, input: &str) -> io::Result<()>{
-        if BUILTIN_COMMANDS.contains(&input) {
+    pub fn type_(&self, input: &String) -> io::Result<()>{
+        if BUILTIN_COMMANDS.contains(&input.as_str()) {
             println!("{} is a shell builtin", input);
             return Ok(());
         };
@@ -57,7 +57,7 @@ impl ShellCommand {
         Ok(())
     }
 
-    pub fn cd(&mut self, path: &str) -> std::io::Result<()>{
+    pub fn cd(&mut self, path: &String) -> std::io::Result<()>{
         let mut desired_path = path.to_string();
         if path == "~"{
             let home = env::var("HOME").unwrap();
@@ -78,9 +78,9 @@ impl ShellCommand {
 }
 
 // utils
-fn parse_arguments(input: &String) -> Vec<&str> {
+fn parse_arguments(input: &String) -> Vec<String> {
     let arguments: Vec<&str> = input.split(" ").collect();
-    arguments
+    arguments.into_iter().map(|x| x.replace("'", "")).collect()
 }
 
 fn main() {
@@ -94,14 +94,13 @@ fn main() {
         io::stdin().read_line(&mut input).unwrap();
         input = input.trim().to_string();
         let command = parse_arguments(&input);
-        match command[0] {
+        match command[0].as_str() {
             "exit" => break,
             "pwd" => shell_command.pwd(),
             "echo" => shell_command.echo(&input[5..]),
-            "type" => shell_command.type_(command[1]).unwrap(),
-            "cd" => shell_command.cd(command[1]).unwrap(),
-            "cd" => shell_command.cd(command[1]).unwrap(),
-            _ => shell_command.execute(command[0], command[1..].to_vec()).unwrap()
+            "type" => shell_command.type_(&command[1]).unwrap(),
+            "cd" => shell_command.cd(&command[1]).unwrap(),
+            _ => shell_command.execute(&command[0], command[1..].to_vec()).unwrap()
         }
     }
 }
