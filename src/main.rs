@@ -19,7 +19,7 @@ impl ShellCommand {
     }
     
     pub fn echo(&self, input: Vec<String>){
-        let str_ = input.join("");
+        let str_ = input.join(" ");
         println!("{}", str_);
     }
 
@@ -89,9 +89,9 @@ fn parse_arguments(input: &String) -> Vec<String> {
     // echo 'world     hello' 'test''example' script''shell
 
     for c in cleaned.chars(){
-        // println!("{:?}", new_input);
-        // println!("{:?}", commands);
-        // print!("------------\n");
+        println!("{:?}", new_input);
+        println!("{:?}", commands);
+        print!("------------\n");
         if c == '\''{
             is_quoted = if is_quoted == true {false} else {true};
             continue;
@@ -108,9 +108,9 @@ fn parse_arguments(input: &String) -> Vec<String> {
                 let mut word: String = new_input.clone().into_iter().collect();
                 word = word.trim().to_string();
                 commands.push(word);
-                if commands.len() > 1{
-                    commands.push(String::from(" "));
-                }
+                // if commands.len() > 1{
+                    // commands.push(String::from(" "));
+                // }
                 new_input = vec![];
                 continue;
             }
@@ -127,11 +127,11 @@ fn parse_arguments(input: &String) -> Vec<String> {
         word = word.trim().to_string();
         commands.push(word);
     }
-    // println!("{:?}", new_input);
-    // println!("{:?}", commands);
+    println!("{:?}", new_input);
+    println!("{:?}", commands);
 
     let filtered: Vec<String> = commands.into_iter().filter(|x| x != "").collect();
-    // println!("{:?}", filtered);
+    println!("{:?}", filtered);
     filtered
 }
 
