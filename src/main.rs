@@ -86,8 +86,15 @@ fn parse_arguments(input: &String) -> Vec<String> {
     let mut is_single_quoted = false;
     let mut is_double_quoted = false;
     let mut in_whitespace = false;
+    let mut is_backslash = false;
 
     for c in cleaned.chars(){
+        if is_backslash{
+            current_command.push(c);
+            is_backslash = false;
+            continue;
+        }
+
         if c == '\'' && !is_double_quoted{
             is_single_quoted = !is_single_quoted;
             continue;
@@ -97,8 +104,16 @@ fn parse_arguments(input: &String) -> Vec<String> {
             continue;
         }
 
+        if c == '\\'{
+            if is_backslash{
+                current_command.push(c);
+            }
+            is_backslash = !is_backslash;
+            continue;
+        }
+
         if c.is_ascii_whitespace(){
-            if is_single_quoted || is_double_quoted{
+            if is_single_quoted || is_double_quoted || is_backslash{
                 current_command.push(c);
             }else if !in_whitespace{
                 in_whitespace = true;
