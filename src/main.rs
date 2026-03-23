@@ -3,8 +3,10 @@ use std::{env, fs};
 use std::io::{self, Write};
 use std::process::Command;
 use std::path::Path;
+use parser::parse_arguments;
 
 pub mod fs_utils;
+pub mod parser;
 
 const BUILTIN_COMMANDS: [&'static str; 5] = ["echo", "exit", "type", "pwd", "cd"];
 
@@ -79,66 +81,7 @@ impl ShellCommand {
 }
 
 // utils
-fn parse_arguments(input: &String) -> Vec<String> {
-    let cleaned = input.trim();
-    let mut commands: Vec<String> = vec![];
-    let mut current_command = String::new();
-    let mut is_single_quoted = false;
-    let mut is_double_quoted = false;
-    let mut in_whitespace = false;
-    let mut is_backslash = false;
 
-    for c in cleaned.chars(){
-        if is_backslash{
-            current_command.push(c);
-            is_backslash = false;
-            continue;
-        }
-
-        if c == '\'' && !is_double_quoted{
-            is_single_quoted = !is_single_quoted;
-            is_backslash = false; // backslash does not have special meaning in single quotes
-            continue;
-        }
-        if c == '"'{
-            if is_single_quoted{
-                current_command.push(c);
-                continue;
-            }
-            is_double_quoted = !is_double_quoted;
-            continue;
-        }
-
-        if c == '\\'{
-            if is_single_quoted{
-                current_command.push(c);
-                continue;
-            }
-            is_backslash = !is_backslash;
-            continue;
-        }
-
-        if c.is_ascii_whitespace(){
-            if is_single_quoted || is_double_quoted || is_backslash{
-                current_command.push(c);
-            }else if !in_whitespace{
-                in_whitespace = true;
-                commands.push(current_command);
-                current_command = String::new();
-            };
-            continue
-        }
-
-        in_whitespace = false;
-        current_command.push(c);
-
-    }
-    if current_command.len() > 0{
-        commands.push(current_command);
-    }
-
-    commands
-}
 
 fn main() {
     let mut shell_command = ShellCommand::new();
