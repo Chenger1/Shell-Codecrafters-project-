@@ -80,8 +80,6 @@ impl ShellCommand {
 
 }
 
-// utils
-
 
 fn main() {
     let mut shell_command = ShellCommand::new();
