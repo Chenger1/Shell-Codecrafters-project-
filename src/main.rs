@@ -101,6 +101,10 @@ fn parse_arguments(input: &String) -> Vec<String> {
             continue;
         }
         if c == '"'{
+            if is_single_quoted{
+                current_command.push(c);
+                continue;
+            }
             is_double_quoted = !is_double_quoted;
             continue;
         }
