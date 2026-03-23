@@ -83,17 +83,22 @@ fn parse_arguments(input: &String) -> Vec<String> {
     let cleaned = input.trim();
     let mut commands: Vec<String> = vec![];
     let mut current_command = String::new();
-    let mut is_quoted = false;
+    let mut is_single_quoted = false;
+    let mut is_double_quoted = false;
     let mut in_whitespace = false;
 
     for c in cleaned.chars(){
-        if c == '\''{
-            is_quoted = !is_quoted;
+        if c == '\'' && !is_double_quoted{
+            is_single_quoted = !is_single_quoted;
+            continue;
+        }
+        if c == '"'{
+            is_double_quoted = !is_double_quoted;
             continue;
         }
 
         if c.is_ascii_whitespace(){
-            if is_quoted{
+            if is_single_quoted || is_double_quoted{
                 current_command.push(c);
             }else if !in_whitespace{
                 in_whitespace = true;
