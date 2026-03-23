@@ -105,11 +105,13 @@ fn parse_arguments(input: &String) -> Vec<String> {
         }
 
         if c == '\\'{
-            if is_backslash{
-                current_command.push(c);
-            }
             is_backslash = !is_backslash;
             continue;
+            // if is_backslash{
+            //     current_command.push(c);
+            // }
+            // is_backslash = !is_backslash;
+            // continue;
         }
 
         if c.is_ascii_whitespace(){
