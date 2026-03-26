@@ -40,10 +40,11 @@ impl ShellCommand {
         let executable_file_name = self.fs_utils.is_executable(&input);
         if let Some(_) = executable_file_name {
             let output = Command::new(input).args(arguments).output()?;
-            if output.status.success() {
-                let output = String::from_utf8_lossy(&output.stdout).to_string();
-                self.output.sdtout(&output, &self.redirection);
-            } else {
+            let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+            if !stdout.is_empty(){
+                self.output.sdtout(&stdout, &self.redirection);
+            }
+            if !output.stderr.is_empty(){
                 io::stderr().write_all(&output.stderr)?;
             }
         } else {
