@@ -16,7 +16,7 @@ impl Redirection{
             ">" | "1>" => Redirection::RedirectStdout(path),
             "2>" => Redirection::RedirectStdErr(path),
             ">>" | "1>>" => Redirection::AppendStdout(path),
-            "2>>" => Redirection::AppendStdout(path),
+            "2>>" => Redirection::AppendStderr(path),
             _ => Redirection::Standart
         }
     }
