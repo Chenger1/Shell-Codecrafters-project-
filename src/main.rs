@@ -41,11 +41,12 @@ impl ShellCommand {
         if let Some(_) = executable_file_name {
             let output = Command::new(input).args(arguments).output()?;
             let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+            let stderr = String::from_utf8_lossy(&output.stderr).to_string();
             if !stdout.is_empty(){
                 self.output.sdtout(&stdout, &self.redirection);
             }
             if !output.stderr.is_empty(){
-                io::stderr().write_all(&output.stderr)?;
+                self.output.stderr(&stderr, &self.redirection);
             }
         } else {
             let result = format!("{}: command not found\n", input);

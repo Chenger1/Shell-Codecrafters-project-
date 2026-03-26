@@ -1,13 +1,23 @@
 use std::vec;
 
-const BUILTIN_COMMANDS: [&'static str; 2] = [">", "1>"];
+const BUILTIN_COMMANDS: [&'static str; 3] = [">", "1>", "2>"];
 
 pub enum Redirection{
     Standart,
     RedirectStdout(String),
+    RedirectStdErr(String)
 }
 
 impl Redirection{
+    pub fn math_redirection(symbol: &String, path: String) -> Redirection{
+        match symbol.as_str(){
+            ">" => Redirection::RedirectStdout(path),
+            "1>" => Redirection::RedirectStdout(path),
+            "2>" => Redirection::RedirectStdErr(path),
+            _ => Redirection::Standart
+        }
+    }
+    
     pub fn destination_path(&self) -> Option<String>{
         match self{
             Redirection::RedirectStdout(path) => return Some(path.clone()),
@@ -89,7 +99,7 @@ pub fn extract_redirection(arguments: &Vec<String>) -> (Vec<String>, Redirection
     if let Some(red_symbol) = redirection_symbol{
         let parts: Vec<&[String]> = arguments.splitn(2, |item| item == red_symbol).collect();
         let (command, redirect_path) = (&parts[0], &parts[1]);
-        return (command.to_vec(), Redirection::RedirectStdout(redirect_path.join("")))
+        return (command.to_vec(), Redirection::math_redirection(red_symbol, redirect_path.join("")))
     }else{
         return (arguments.to_vec(), Redirection::Standart)
     }

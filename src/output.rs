@@ -20,4 +20,10 @@ impl Output{
             _ => print!("{}", result)
         }
     }
+    pub fn stderr(&self, result: &String, redirection: &Redirection){
+        match redirection{
+            Redirection::RedirectStdErr(path) => self.redirect_to_file(result, path),
+            _ => print!("{}", result)
+        }
+    }
 }
