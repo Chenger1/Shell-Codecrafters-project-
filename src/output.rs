@@ -24,7 +24,11 @@ impl Output{
         match redirection{
             Redirection::RedirectStdout(path) => self.redirect_to_file(result, path, false),
             Redirection::AppendStdout(path) => self.redirect_to_file(result, path, true),
-            _ => print!("{}", result)
+            _ => {
+                if !result.is_empty(){
+                    print!("{}", result)
+                }
+            }
         }
     }
     pub fn stderr(&self, result: &String, redirection: &Redirection){

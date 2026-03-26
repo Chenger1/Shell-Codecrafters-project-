@@ -107,6 +107,7 @@ fn main() {
         let command = parse_arguments(&input);
         let (command, redirection) = extract_redirection(&command);
         shell_command.redirection = redirection;
+        shell_command.output.sdtout(&String::new(), &shell_command.redirection);
         shell_command.output.stderr(&String::new(), &shell_command.redirection);
         match command[0].as_str() {
             "exit" => break,
