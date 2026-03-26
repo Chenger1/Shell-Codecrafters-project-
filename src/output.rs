@@ -30,6 +30,7 @@ impl Output{
     pub fn stderr(&self, result: &String, redirection: &Redirection){
         match redirection{
             Redirection::RedirectStdErr(path) => self.redirect_to_file(result, path, false),
+            Redirection::AppendStderr(path) => self.redirect_to_file(result, path, true),
             _ => {
                 if !result.is_empty(){
                     eprint!("{}", result)

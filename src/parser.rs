@@ -1,12 +1,13 @@
 use std::vec;
 
-const BUILTIN_COMMANDS: [&'static str; 5] = [">", "1>", "2>", ">>", "1>>"];
+const BUILTIN_COMMANDS: [&'static str; 6] = [">", "1>", "2>", ">>", "1>>", "2>>"];
 
 pub enum Redirection{
     Standart,
     RedirectStdout(String),
     RedirectStdErr(String),
     AppendStdout(String),
+    AppendStderr(String)
 }
 
 impl Redirection{
@@ -15,6 +16,7 @@ impl Redirection{
             ">" | "1>" => Redirection::RedirectStdout(path),
             "2>" => Redirection::RedirectStdErr(path),
             ">>" | "1>>" => Redirection::AppendStdout(path),
+            "2>>" => Redirection::AppendStdout(path),
             _ => Redirection::Standart
         }
     }
