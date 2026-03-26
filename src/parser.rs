@@ -1,3 +1,21 @@
+use std::vec;
+
+const BUILTIN_COMMANDS: [&'static str; 2] = [">", "1>"];
+
+pub enum Redirection{
+    Standart,
+    RedirectStdout(String),
+}
+
+impl Redirection{
+    pub fn destination_path(&self) -> Option<String>{
+        match self{
+            Redirection::RedirectStdout(path) => return Some(path.clone()),
+            _ => None
+        }
+    }
+}
+
 enum State{
     Whitespace,
     Unquoted,
@@ -63,8 +81,18 @@ pub fn parse_arguments(input: &str) -> Vec<String>{
     if !(matches!(state, State::Whitespace)){
         tokens.push(current);
     }
-
     tokens
+}
+
+pub fn extract_redirection(arguments: &Vec<String>) -> (Vec<String>, Redirection){
+    let redirection_symbol = arguments.iter().find(|item| BUILTIN_COMMANDS.contains(&item.as_str()));
+    if let Some(red_symbol) = redirection_symbol{
+        let parts: Vec<&[String]> = arguments.splitn(2, |item| item == red_symbol).collect();
+        let (command, redirect_path) = (&parts[0], &parts[1]);
+        return (command.to_vec(), Redirection::RedirectStdout(redirect_path.join("")))
+    }else{
+        return (arguments.to_vec(), Redirection::Standart)
+    }
 }
 
 
@@ -109,5 +137,13 @@ mod tests{
     fn test_backslash_double_quotes(){
         assert_eq!(parse_arguments(r#"echo "just'one'\\n'backslash""#), vec!["echo", r#"just'one'\n'backslash"#]);
         assert_eq!(parse_arguments(r#"echo "inside\"literal_quote."outside\"#), vec!["echo", r#"inside"literal_quote.outside"#]);
+    }
+
+    #[test]
+    fn test_redirection(){
+        let arguments = parse_arguments("echo hello > output.txt");
+        let (command_arguments, redirection) = extract_redirection(&arguments);
+        assert_eq!(command_arguments, vec!["echo", "hello"]);
+        assert!(matches!(redirection, Redirection::RedirectStdout(ref path) if path == "output.txt"));
     }
 }

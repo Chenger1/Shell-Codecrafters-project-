@@ -3,31 +3,37 @@ use std::{env, fs};
 use std::io::{self, Write};
 use std::process::Command;
 use std::path::Path;
-use parser::parse_arguments;
+use parser::{parse_arguments, extract_redirection};
 
 pub mod fs_utils;
 pub mod parser;
+pub mod output;
 
 const BUILTIN_COMMANDS: [&'static str; 5] = ["echo", "exit", "type", "pwd", "cd"];
 
 struct ShellCommand {
-    fs_utils: fs_utils::FSUtils
+    fs_utils: fs_utils::FSUtils,
+    output: output::Output,
+    pub redirection: parser::Redirection
 }
 
 impl ShellCommand {
     pub fn new() -> Self{
         let utils = fs_utils::FSUtils::new();
-        ShellCommand { fs_utils: utils}
+        let output = output::Output::new();
+        ShellCommand { fs_utils: utils, output: output, redirection: parser::Redirection::Standart}
     }
     
     pub fn echo(&self, input: Vec<String>){
         let str_ = input.join(" ");
-        println!("{}", str_);
+        let result = format!("{}", str_);
+        self.output.sdtout(&result, &self.redirection);
     }
 
     pub fn pwd(&self){
         let path = fs::canonicalize(".").unwrap();
-        println!("{}", path.to_str().unwrap());
+        let result = format!("{}", path.to_str().unwrap());
+        self.output.sdtout(&result, &self.redirection);
     }
 
     pub fn execute(&self, input: &String, arguments: Vec<String>) -> io::Result<()>{
@@ -35,27 +41,32 @@ impl ShellCommand {
         if let Some(_) = executable_file_name {
             let output = Command::new(input).args(arguments).output()?;
             if output.status.success() {
-                io::stdout().write_all(&output.stdout)?;
+                let output = String::from_utf8_lossy(&output.stdout).to_string();
+                self.output.sdtout(&output, &self.redirection);
             } else {
                 io::stderr().write_all(&output.stderr)?;
             }
         } else {
-            println!("{}: command not found", input);
+            let result = format!("{}: command not found", input);
+            self.output.sdtout(&result, &self.redirection);
         }
         Ok(())
     }
 
     pub fn type_(&self, input: &String) -> io::Result<()>{
         if BUILTIN_COMMANDS.contains(&input.as_str()) {
-            println!("{} is a shell builtin", input);
+            let result = format!("{} is a shell builtin", input);
+            self.output.sdtout(&result, &self.redirection);
             return Ok(());
         };
         
         let executable_file_name = self.fs_utils.is_executable(&input);
         if let Some(file_name) = executable_file_name {
-            println!("{} is {}", input, file_name);
+            let result = format!("{} is {}", input, file_name);
+            self.output.sdtout(&result, &self.redirection);
         } else {
-            println!("{} not found", input);
+            let result = format!("{} not found", input);
+            self.output.sdtout(&result, &self.redirection);
         }
         Ok(())
     }
@@ -69,7 +80,8 @@ impl ShellCommand {
 
         let is_absolute = Path::new(&desired_path).is_absolute();
         if !self.fs_utils.is_exist(&desired_path, is_absolute){
-            println!("cd: {}: No such file or directory", desired_path);
+            let result = format!("cd: {}: No such file or directory", desired_path);
+            self.output.sdtout(&result, &self.redirection);
             return Ok(())
         }
 
@@ -91,6 +103,8 @@ fn main() {
         let mut input = String::new();
         io::stdin().read_line(&mut input).unwrap();
         let command = parse_arguments(&input);
+        let (command, redirection) = extract_redirection(&command);
+        shell_command.redirection = redirection;
         match command[0].as_str() {
             "exit" => break,
             "pwd" => shell_command.pwd(),
