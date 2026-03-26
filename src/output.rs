@@ -17,7 +17,7 @@ impl Output{
     pub fn sdtout(&self, result: &String, redirection: &Redirection){
         match redirection{
             Redirection::RedirectStdout(path) => self.redirect_to_file(result, path),
-            _ => print!("{}\n", result)
+            _ => print!("{}", result)
         }
     }
 }

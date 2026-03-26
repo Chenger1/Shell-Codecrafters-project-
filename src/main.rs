@@ -26,13 +26,13 @@ impl ShellCommand {
     
     pub fn echo(&self, input: Vec<String>){
         let str_ = input.join(" ");
-        let result = format!("{}", str_);
+        let result = format!("{}\n", str_);
         self.output.sdtout(&result, &self.redirection);
     }
 
     pub fn pwd(&self){
         let path = fs::canonicalize(".").unwrap();
-        let result = format!("{}", path.to_str().unwrap());
+        let result = format!("{}\n", path.to_str().unwrap());
         self.output.sdtout(&result, &self.redirection);
     }
 
@@ -47,7 +47,7 @@ impl ShellCommand {
                 io::stderr().write_all(&output.stderr)?;
             }
         } else {
-            let result = format!("{}: command not found", input);
+            let result = format!("{}: command not found\n", input);
             self.output.sdtout(&result, &self.redirection);
         }
         Ok(())
@@ -55,17 +55,17 @@ impl ShellCommand {
 
     pub fn type_(&self, input: &String) -> io::Result<()>{
         if BUILTIN_COMMANDS.contains(&input.as_str()) {
-            let result = format!("{} is a shell builtin", input);
+            let result = format!("{} is a shell builtin\n", input);
             self.output.sdtout(&result, &self.redirection);
             return Ok(());
         };
         
         let executable_file_name = self.fs_utils.is_executable(&input);
         if let Some(file_name) = executable_file_name {
-            let result = format!("{} is {}", input, file_name);
+            let result = format!("{} is {}\n", input, file_name);
             self.output.sdtout(&result, &self.redirection);
         } else {
-            let result = format!("{} not found", input);
+            let result = format!("{} not found\n", input);
             self.output.sdtout(&result, &self.redirection);
         }
         Ok(())
@@ -80,7 +80,7 @@ impl ShellCommand {
 
         let is_absolute = Path::new(&desired_path).is_absolute();
         if !self.fs_utils.is_exist(&desired_path, is_absolute){
-            let result = format!("cd: {}: No such file or directory", desired_path);
+            let result = format!("cd: {}: No such file or directory\n", desired_path);
             self.output.sdtout(&result, &self.redirection);
             return Ok(())
         }
