@@ -1,19 +1,20 @@
 use std::vec;
 
-const BUILTIN_COMMANDS: [&'static str; 3] = [">", "1>", "2>"];
+const BUILTIN_COMMANDS: [&'static str; 5] = [">", "1>", "2>", ">>", "1>>"];
 
 pub enum Redirection{
     Standart,
     RedirectStdout(String),
-    RedirectStdErr(String)
+    RedirectStdErr(String),
+    AppendStdout(String),
 }
 
 impl Redirection{
     pub fn math_redirection(symbol: &String, path: String) -> Redirection{
         match symbol.as_str(){
-            ">" => Redirection::RedirectStdout(path),
-            "1>" => Redirection::RedirectStdout(path),
+            ">" | "1>" => Redirection::RedirectStdout(path),
             "2>" => Redirection::RedirectStdErr(path),
+            ">>" | "1>>" => Redirection::AppendStdout(path),
             _ => Redirection::Standart
         }
     }
