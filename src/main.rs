@@ -3,11 +3,13 @@ use std::{env, fs};
 use std::io::{self, Write};
 use std::process::Command;
 use std::path::Path;
+use rustyline::{Editor, Result, Config};
 use parser::{parse_arguments, extract_redirection};
 
 pub mod fs_utils;
 pub mod parser;
 pub mod output;
+pub mod helper;
 
 const BUILTIN_COMMANDS: [&'static str; 5] = ["echo", "exit", "type", "pwd", "cd"];
 
@@ -95,15 +97,14 @@ impl ShellCommand {
 }
 
 
-fn main() {
+fn main() -> Result<()>{
     let mut shell_command = ShellCommand::new();
+    let config = Config::builder().build();
+    let mut rl = Editor::with_config(config)?;
+    rl.set_helper(Some(helper::CommandLineHelper::new(BUILTIN_COMMANDS)));
 
     loop {
-        print!("$ ");
-        io::stdout().flush().unwrap();
-
-        let mut input = String::new();
-        io::stdin().read_line(&mut input).unwrap();
+        let input = rl.readline("$ ")?;
         let command = parse_arguments(&input);
         let (command, redirection) = extract_redirection(&command);
         shell_command.redirection = redirection;
@@ -118,4 +119,6 @@ fn main() {
             _ => shell_command.execute(&command[0], command[1..].to_vec()).unwrap()
         }
     }
+
+    Ok(())
 }
