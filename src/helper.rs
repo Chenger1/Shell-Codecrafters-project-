@@ -34,7 +34,7 @@ impl rustyline::hint::Hinter for CommandLineHelper{
 }
 
 impl Completer for CommandLineHelper {
-    type Candidate = &'static str;
+    type Candidate = String;
 
     fn complete(
             &self, // FIXME should be `&mut self`
@@ -44,6 +44,8 @@ impl Completer for CommandLineHelper {
         ) -> rustyline::Result<(usize, Vec<Self::Candidate>)> {
             if self.prefix_tree.starts_with(line){
                 if let Some(found_word) = self.get_word_from_tree(line){
+                    let mut found_word = found_word.to_string().clone();
+                    found_word.push(' ');
                     return Ok((0, vec![found_word]))
                 }
                 return Ok((0, vec![]))
