@@ -16,7 +16,6 @@ impl CommandLineHelper{
         }
         let mut path_trie = Trie::new();
         for exec in &path_executables{
-            println!("{}", exec);
             path_trie.insert(exec.as_str());
         }
 
