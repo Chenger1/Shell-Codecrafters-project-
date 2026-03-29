@@ -28,7 +28,9 @@ impl FSUtils{
                         let path_name = path.to_string_lossy();
         
                         if self.is_file_executable(&path_name) == Some(true){
-                            names.push(path.file_name().unwrap().to_os_string().into_string().unwrap());
+                            if let Some(name) = path.file_name().and_then(|n| n.to_str()){
+                                names.push(name.to_string());
+                            }
                         }
                     }
                 }
