@@ -14,7 +14,7 @@ pub mod helper;
 const BUILTIN_COMMANDS: [&'static str; 5] = ["echo", "exit", "type", "pwd", "cd"];
 
 struct ShellCommand {
-    fs_utils: fs_utils::FSUtils,
+    pub fs_utils: fs_utils::FSUtils,
     output: output::Output,
     pub redirection: parser::Redirection
 }
@@ -101,7 +101,8 @@ fn main() -> Result<()>{
     let mut shell_command = ShellCommand::new();
     let config = Config::builder().build();
     let mut rl = Editor::with_config(config)?;
-    rl.set_helper(Some(helper::CommandLineHelper::new(BUILTIN_COMMANDS)));
+    let path_executables = shell_command.fs_utils.get_path_executables();
+    rl.set_helper(Some(helper::CommandLineHelper::new(BUILTIN_COMMANDS, path_executables)));
 
     loop {
         let input = rl.readline("$ ")?;
