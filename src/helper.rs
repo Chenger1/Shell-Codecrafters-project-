@@ -90,7 +90,6 @@ impl Completer for CommandLineHelper {
                 let matched = self.get_all_path_commands(line);
                 if matched.len() == 1{
                     let mut found_word = matched[0].clone();
-                    println!("{}", found_word);
                     found_word.push(' ');
                     result.push(found_word);
                 }else if matched.len() > 1 {
