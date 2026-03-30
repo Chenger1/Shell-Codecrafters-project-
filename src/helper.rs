@@ -111,8 +111,6 @@ impl Completer for CommandLineHelper {
 
                     if let Some(_) = self.last_prompt.take(){
                         println!("\n{}", matched.join("  "));
-                        let mut line_string = line.to_string();
-                        line_string.push(' ');
                         return Ok((0, vec![line.to_string()]));
                     }else{
                         self.last_prompt.replace(Some(line.to_string()));
