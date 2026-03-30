@@ -52,13 +52,23 @@ impl CommandLineHelper{
         matches
     }
 
-    fn print_all_path_commands(&self, commands: &Vec<String>){
-        // println!("");
-        println!("\n{}", commands.join("  "));
-        // for word in commands.iter(){
-            // print!("{}  ", word);
-        // }
-        // println!("");
+    fn find_longest_common_prefix(&self, words: &Vec<String>) -> String{
+        if words.is_empty(){
+            return String::new();
+        }
+        
+        let mut prefix = words[0].clone();
+
+        for word in &words[1..] {
+            while !word.starts_with(prefix.as_str()) {
+                prefix.pop();
+                if prefix.is_empty() {
+                    return String::new();
+                }
+            }
+        }
+
+        prefix
     }
 
 }
@@ -94,10 +104,16 @@ impl Completer for CommandLineHelper {
                     found_word.push(' ');
                     result.push(found_word);
                 }else if matched.len() > 1 {
+                    let prefix = self.find_longest_common_prefix(&matched);
+                    if prefix.len() > line.to_string().len(){
+                        return Ok((0, vec![prefix]));
+                    }
+
                     if let Some(_) = self.last_prompt.take(){
-                        // self.print_all_path_commands(&matched);
                         println!("\n{}", matched.join("  "));
-                        return Ok((0, vec![line.to_string()]));
+                        let mut line_string = line.to_string();
+                        line_string.push(' ');
+                        return Ok((0, vec![line_string]));
                     }else{
                         self.last_prompt.replace(Some(line.to_string()));
                         print!("\x07");
