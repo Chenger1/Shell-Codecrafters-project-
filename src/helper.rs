@@ -113,7 +113,7 @@ impl Completer for CommandLineHelper {
                         println!("\n{}", matched.join("  "));
                         let mut line_string = line.to_string();
                         line_string.push(' ');
-                        return Ok((0, vec![line_string]));
+                        return Ok((0, vec![line.to_string()]));
                     }else{
                         self.last_prompt.replace(Some(line.to_string()));
                         print!("\x07");
