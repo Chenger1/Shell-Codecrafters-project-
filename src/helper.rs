@@ -1,6 +1,6 @@
 use std::io;
 use std::io::Write;
-use std::{cell::RefCell, vec};
+use std::{cell::RefCell};
 use rustyline::completion::{Completer};
 use prefix_tree_rs::Trie;
 
@@ -53,11 +53,12 @@ impl CommandLineHelper{
     }
 
     fn print_all_path_commands(&self, commands: &Vec<String>){
-        println!("");
-        for word in commands.iter(){
-            print!("{}  ", word);
-        }
-        println!("");
+        // println!("");
+        println!("\n{}", commands.join("  "));
+        // for word in commands.iter(){
+            // print!("{}  ", word);
+        // }
+        // println!("");
     }
 
 }
@@ -75,8 +76,8 @@ impl Completer for CommandLineHelper {
     fn complete(
             &self,
             line: &str,
-            pos: usize,
-            ctx: &rustyline::Context<'_>,
+            _: usize,
+            _: &rustyline::Context<'_>,
         ) -> rustyline::Result<(usize, Vec<Self::Candidate>)> {
             let mut result: Vec<String> = vec![];
             if self.builtin_prefix_tree.starts_with(line){
@@ -93,9 +94,10 @@ impl Completer for CommandLineHelper {
                     found_word.push(' ');
                     result.push(found_word);
                 }else if matched.len() > 1 {
-                    if let Some(last_prompted_word) = self.last_prompt.take(){
-                        self.print_all_path_commands(&matched);
-                        return Ok((0, vec![last_prompted_word]));
+                    if let Some(_) = self.last_prompt.take(){
+                        // self.print_all_path_commands(&matched);
+                        println!("\n{}", matched.join("  "));
+                        return Ok((0, vec![line.to_string()]));
                     }else{
                         self.last_prompt.replace(Some(line.to_string()));
                         print!("\x07");
