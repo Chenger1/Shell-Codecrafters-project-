@@ -3,7 +3,7 @@ use std::{env, fs};
 use std::io::{self, Write};
 use std::process::Command;
 use std::path::Path;
-use rustyline::{Editor, Result, Config};
+use rustyline::{Editor, Result, Config, CompletionType};
 use parser::{parse_arguments, extract_redirection};
 
 pub mod fs_utils;
@@ -99,7 +99,10 @@ impl ShellCommand {
 
 fn main() -> Result<()>{
     let mut shell_command = ShellCommand::new();
-    let config = Config::builder().build();
+    let config = Config::builder().
+    completion_show_all_if_ambiguous(true).
+    completion_type(CompletionType::List).
+    build();
     let mut rl = Editor::with_config(config)?;
     let path_executables = shell_command.fs_utils.get_path_executables();
     rl.set_helper(Some(helper::CommandLineHelper::new(BUILTIN_COMMANDS, path_executables)));
