@@ -94,7 +94,21 @@ impl Completer for CommandLineHelper {
             ctx: &rustyline::Context<'_>,
         ) -> rustyline::Result<(usize, Vec<Self::Candidate>)> {
             if line.split(" ").collect::<Vec<&str>>().len() > 1{
-                return self.filename_completer.complete(line, pos, ctx);
+                let result = self.filename_completer.complete(line, pos, ctx);
+                if let Ok((start, candidates)) = result{
+                    let mut updated_candidates = vec![];
+                    for mut candidate in candidates{
+                        let mut display = candidate.display.clone();
+                        let mut replacement = candidate.replacement.clone();
+                        display.push(' ');
+                        replacement.push(' ');
+                        candidate.display = display;
+                        candidate.replacement = replacement;
+                        updated_candidates.push(candidate);
+                    }
+                    return Ok((start, updated_candidates));
+                }
+
             }
 
             let mut result: Vec<RustyPair> = vec![];
