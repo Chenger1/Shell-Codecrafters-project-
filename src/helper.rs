@@ -84,6 +84,12 @@ impl rustyline::hint::Hinter for CommandLineHelper{
     type Hint = &'static str;
 }
 
+fn make_pair(s: String) -> RustyPair{
+    let mut s = s;
+    s.push(' ');
+    RustyPair {display: s.clone(), replacement: s}
+}
+
 impl Completer for CommandLineHelper {
     type Candidate = RustyPair;
 
@@ -96,16 +102,11 @@ impl Completer for CommandLineHelper {
             if line.split(" ").collect::<Vec<&str>>().len() > 1{
                 let result = self.filename_completer.complete(line, pos, ctx);
                 if let Ok((start, candidates)) = result{
-                    let mut updated_candidates = vec![];
-                    for mut candidate in candidates{
-                        let mut display = candidate.display.clone();
-                        let mut replacement = candidate.replacement.clone();
-                        display.push(' ');
-                        replacement.push(' ');
-                        candidate.display = display;
-                        candidate.replacement = replacement;
-                        updated_candidates.push(candidate);
-                    }
+                    let updated_candidates: Vec<RustyPair> = candidates.into_iter().map(|mut candidate|{
+                        candidate.display.push(' ');
+                        candidate.replacement.push(' ');
+                        candidate
+                    }).collect();
                     return Ok((start, updated_candidates));
                 }
 
@@ -114,23 +115,15 @@ impl Completer for CommandLineHelper {
             let mut result: Vec<RustyPair> = vec![];
             if self.builtin_prefix_tree.starts_with(line){
                 if let Some(found_word) = self.get_builtin_command(line){
-                    let mut found_word = found_word.to_string().clone();
-                    found_word.push(' ');
-                    result.push(RustyPair {
-                        display: found_word.clone(),
-                        replacement: found_word,
-                    });
+                    let found_word = found_word.to_string().clone();
+                    result.push(make_pair(found_word));
                 }
             }
             else if self.path_prefix_tree.starts_with(line){
                 let matched = self.get_all_path_commands(line);
                 if matched.len() == 1{
-                    let mut found_word = matched[0].clone();
-                    found_word.push(' ');
-                    result.push(RustyPair {
-                        display: found_word.clone(),
-                        replacement: found_word,
-                    });
+                    let found_word = matched[0].clone();
+                    result.push(make_pair(found_word));
                 }else if matched.len() > 1 {
                     let prefix = self.find_longest_common_prefix(&matched);
                     if prefix.len() > line.to_string().len(){
