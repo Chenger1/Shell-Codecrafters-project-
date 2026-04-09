@@ -100,12 +100,10 @@ impl Completer for CommandLineHelper {
             ctx: &rustyline::Context<'_>,
         ) -> rustyline::Result<(usize, Vec<Self::Candidate>)> {
             if line.split(" ").collect::<Vec<&str>>().len() > 1{
+                self.last_prompt.replace(None);
                 let result = self.filename_completer.complete(line, pos, ctx);
                 if let Ok((start, candidates)) = result{
                     let updated_candidates: Vec<RustyPair> = candidates.into_iter().map(|mut candidate|{
-                        // if !candidate.display.ends_with("/"){
-                        //     candidate.display.push(' ');
-                        // }
                         if !candidate.replacement.ends_with("/"){
                             candidate.replacement.push(' ');
                         }
