@@ -103,14 +103,13 @@ impl Completer for CommandLineHelper {
                 let result = self.filename_completer.complete(line, pos, ctx);
                 if let Ok((start, candidates)) = result{
                     let updated_candidates: Vec<RustyPair> = candidates.into_iter().map(|mut candidate|{
-                        if !candidate.display.ends_with("/"){
-                            // candidate.display.push(' ');
-                        }
+                        // if !candidate.display.ends_with("/"){
+                        //     candidate.display.push(' ');
+                        // }
                         if !candidate.replacement.ends_with("/"){
                             candidate.replacement.push(' ');
-                            // Cargo.lock   Cargo.toml
-                            // Cargo.lock  Cargo.toml
                         }
+                        candidate.display = candidate.replacement.clone();
                         candidate
                     }).collect();
                     return Ok((start, updated_candidates));
