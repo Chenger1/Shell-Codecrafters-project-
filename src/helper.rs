@@ -77,6 +77,10 @@ impl CommandLineHelper{
         prefix
     }
 
+    pub fn clear_state(&mut self){
+        self.first_tab.replace(false);
+    }
+
 }
 
 impl rustyline::Helper for CommandLineHelper{}
@@ -109,7 +113,7 @@ impl Completer for CommandLineHelper {
                     let result = vec![];
                     return Ok((0, result)); 
                 }else{
-                    self.first_tab.replace(false);
+                    self.first_tab.replace(true);
                     let result = self.filename_completer.complete(line, pos, ctx);
                     if let Ok((start, candidates)) = result{
                         let updated_candidates: Vec<RustyPair> = candidates.into_iter().map(|mut candidate|{
@@ -163,7 +167,6 @@ impl Completer for CommandLineHelper {
                 }
             }
             self.last_prompt.replace(None);
-            self.first_tab.replace(false);
             return Ok((0, result)); 
     }
 }

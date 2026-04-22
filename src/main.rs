@@ -105,10 +105,14 @@ fn main() -> Result<()>{
     build();
     let mut rl = Editor::with_config(config)?;
     let path_executables = shell_command.fs_utils.get_path_executables();
-    rl.set_helper(Some(helper::CommandLineHelper::new(BUILTIN_COMMANDS, path_executables)));
+    let helper = helper::CommandLineHelper::new(BUILTIN_COMMANDS, path_executables);
+    rl.set_helper(Some(helper));
 
     loop {
         let input = rl.readline("$ ")?;
+        if let Some( h) = rl.helper_mut(){
+            h.clear_state();
+        }
         let command = parse_arguments(&input);
         let (command, redirection) = extract_redirection(&command);
         shell_command.redirection = redirection;
