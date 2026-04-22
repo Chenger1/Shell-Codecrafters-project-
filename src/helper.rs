@@ -38,6 +38,10 @@ impl CommandLineHelper{
         }
     }
 
+    pub fn clear_state(&mut self){
+        self.first_tab.replace(false);
+    }
+
     fn get_builtin_command(&self, prefix: &str) -> Option<&'static str>{
         for word in self.builtin_command{
             if word.starts_with(prefix){
@@ -77,8 +81,42 @@ impl CommandLineHelper{
         prefix
     }
 
-    pub fn clear_state(&mut self){
-        self.first_tab.replace(false);
+    fn filename_completion(&self, line: &str, pos: usize, ctx: &rustyline::Context<'_>,) -> Option<rustyline::Result<(usize, Vec<<CommandLineHelper as Completer>::Candidate>)>>{
+        let splitted_line = line.split(" ").collect::<Vec<&str>>();
+        if splitted_line.len() > 1{
+            self.last_prompt.replace(None);
+            let result = self.filename_completer.complete(line, pos, ctx);
+            if let Ok((start, candidates)) = result{
+                let updated_candidates: Vec<RustyPair> = candidates.into_iter().map(|mut candidate|{
+                    if !candidate.replacement.ends_with("/"){
+                        candidate.replacement.push(' ');
+                    }
+                    candidate.display = candidate.replacement.clone();
+                    candidate
+                }).collect();
+                if updated_candidates.len() == 1{
+                    return Some(Ok((start, vec![updated_candidates[0].clone()])));
+                }
+                let candidates_strings: Vec<String> = updated_candidates.clone().into_iter().map(|candidate| candidate.replacement).collect();
+                let prefix = self.find_longest_common_prefix(&candidates_strings);
+                if prefix.len() > splitted_line[1].to_string().len(){
+                    return Some(Ok((splitted_line[0].to_string().len() + 1, vec![RustyPair{
+                        display: prefix.clone(),
+                        replacement: prefix
+                    }])))
+                }
+                if !self.first_tab.take(){
+                    self.first_tab.replace(true);
+                    print!("\x07");
+                    let result = vec![];
+                    return Some(Ok((0, result))); 
+                }else{
+                    self.first_tab.replace(true);
+                    return Some(Ok((start, updated_candidates)));
+                }
+            }
+        }
+        None
     }
 
 }
@@ -105,41 +143,9 @@ impl Completer for CommandLineHelper {
             pos: usize,
             ctx: &rustyline::Context<'_>,
         ) -> rustyline::Result<(usize, Vec<Self::Candidate>)> {
-            let splitted_line = line.split(" ").collect::<Vec<&str>>();
-            if splitted_line.len() > 1{
-                self.last_prompt.replace(None);
-                let result = self.filename_completer.complete(line, pos, ctx);
-                if let Ok((start, candidates)) = result{
-                    let updated_candidates: Vec<RustyPair> = candidates.into_iter().map(|mut candidate|{
-                        if !candidate.replacement.ends_with("/"){
-                            candidate.replacement.push(' ');
-                        }
-                        candidate.display = candidate.replacement.clone();
-                        candidate
-                    }).collect();
-                    if updated_candidates.len() == 1{
-                        return Ok((start, vec![updated_candidates[0].clone()]));
-                    }
-                    let candidates_strings: Vec<String> = updated_candidates.clone().into_iter().map(|candidate| candidate.replacement).collect();
-                    let prefix = self.find_longest_common_prefix(&candidates_strings);
-                    if prefix.len() > splitted_line[1].to_string().len(){
-                        return Ok((splitted_line[0].to_string().len() + 1, vec![RustyPair{
-                            display: prefix.clone(),
-                            replacement: prefix
-                        }]))
-                    }
-                    if !self.first_tab.take(){
-                        self.first_tab.replace(true);
-                        print!("\x07");
-                        let result = vec![];
-                        return Ok((0, result)); 
-                    }else{
-                        self.first_tab.replace(true);
-                        return Ok((start, updated_candidates));
-                    }
-                }
+            if let Some(result) = self.filename_completion(line, pos, ctx){
+                return result
             }
-
             let mut result: Vec<RustyPair> = vec![];
             if self.builtin_prefix_tree.starts_with(line){
                 if let Some(found_word) = self.get_builtin_command(line){
