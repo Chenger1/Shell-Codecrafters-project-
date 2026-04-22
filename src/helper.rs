@@ -11,7 +11,8 @@ pub struct CommandLineHelper{
     builtin_command: [&'static str; 5],
     path_names: Vec<String>,
     last_prompt: RefCell<Option<String>>,
-    filename_completer: FilenameCompleter
+    filename_completer: FilenameCompleter,
+    first_tab: RefCell<bool>
 }
 
 impl CommandLineHelper{
@@ -32,7 +33,8 @@ impl CommandLineHelper{
             builtin_command: command,
             path_names: path_executables,
             last_prompt: RefCell::new(None),
-            filename_completer: fc
+            filename_completer: fc,
+            first_tab: RefCell::new(false)
         }
     }
 
@@ -101,18 +103,25 @@ impl Completer for CommandLineHelper {
         ) -> rustyline::Result<(usize, Vec<Self::Candidate>)> {
             if line.split(" ").collect::<Vec<&str>>().len() > 1{
                 self.last_prompt.replace(None);
-                let result = self.filename_completer.complete(line, pos, ctx);
-                if let Ok((start, candidates)) = result{
-                    let updated_candidates: Vec<RustyPair> = candidates.into_iter().map(|mut candidate|{
-                        if !candidate.replacement.ends_with("/"){
-                            candidate.replacement.push(' ');
-                        }
-                        candidate.display = candidate.replacement.clone();
-                        candidate
-                    }).collect();
-                    return Ok((start, updated_candidates));
+                if !self.first_tab.take(){
+                    self.first_tab.replace(true);
+                    print!("\x07");
+                    let result = vec![];
+                    return Ok((0, result)); 
+                }else{
+                    self.first_tab.replace(false);
+                    let result = self.filename_completer.complete(line, pos, ctx);
+                    if let Ok((start, candidates)) = result{
+                        let updated_candidates: Vec<RustyPair> = candidates.into_iter().map(|mut candidate|{
+                            if !candidate.replacement.ends_with("/"){
+                                candidate.replacement.push(' ');
+                            }
+                            candidate.display = candidate.replacement.clone();
+                            candidate
+                        }).collect();
+                        return Ok((start, updated_candidates));
+                    }
                 }
-
             }
 
             let mut result: Vec<RustyPair> = vec![];
@@ -154,6 +163,7 @@ impl Completer for CommandLineHelper {
                 }
             }
             self.last_prompt.replace(None);
+            self.first_tab.replace(false);
             return Ok((0, result)); 
     }
 }
