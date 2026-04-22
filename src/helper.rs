@@ -105,7 +105,8 @@ impl Completer for CommandLineHelper {
             pos: usize,
             ctx: &rustyline::Context<'_>,
         ) -> rustyline::Result<(usize, Vec<Self::Candidate>)> {
-            if line.split(" ").collect::<Vec<&str>>().len() > 1{
+            let splitted_line = line.split(" ").collect::<Vec<&str>>();
+            if splitted_line.len() > 1{
                 self.last_prompt.replace(None);
                 let result = self.filename_completer.complete(line, pos, ctx);
                 if let Ok((start, candidates)) = result{
@@ -118,6 +119,14 @@ impl Completer for CommandLineHelper {
                     }).collect();
                     if updated_candidates.len() == 1{
                         return Ok((start, vec![updated_candidates[0].clone()]));
+                    }
+                    let candidates_strings: Vec<String> = updated_candidates.clone().into_iter().map(|candidate| candidate.replacement).collect();
+                    let prefix = self.find_longest_common_prefix(&candidates_strings);
+                    if prefix.len() > splitted_line[1].to_string().len(){
+                        return Ok((splitted_line[0].to_string().len() + 1, vec![RustyPair{
+                            display: prefix.clone(),
+                            replacement: prefix
+                        }]))
                     }
                     if !self.first_tab.take(){
                         self.first_tab.replace(true);
