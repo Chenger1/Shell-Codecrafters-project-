@@ -38,7 +38,7 @@ enum State{
     DoubleQuotedBackslash
 }
 
-pub fn parse_arguments(input: &str) -> Vec<String>{
+pub fn parse_arguments(input: &str) -> Vec<Vec<String>>{
     let mut tokens: Vec<String> = vec![];
     let mut current = String::new();
     let mut state = State::Whitespace;
@@ -94,7 +94,7 @@ pub fn parse_arguments(input: &str) -> Vec<String>{
     if !(matches!(state, State::Whitespace)){
         tokens.push(current);
     }
-    tokens
+    tokens.split(|item| item == "|").map(|part| part.to_vec()).collect()
 }
 
 pub fn extract_redirection(arguments: &Vec<String>) -> (Vec<String>, Redirection){
@@ -115,47 +115,47 @@ mod tests{
 
     #[test]
     fn test_single_quotes(){
-        assert_eq!(parse_arguments("echo 'hello    world'"), vec!["echo", "hello    world"]);
-        assert_eq!(parse_arguments("echo hello    world"), vec!["echo", "hello", "world"]);
-        assert_eq!(parse_arguments("echo 'hello''world'"), vec!["echo", "helloworld"]);
-        assert_eq!(parse_arguments("echo hello''world"), vec!["echo", "helloworld"]);
+        assert_eq!(parse_arguments("echo 'hello    world'"), vec![vec!["echo", "hello    world"]]);
+        assert_eq!(parse_arguments("echo hello    world"), vec![vec!["echo", "hello", "world"]]);
+        assert_eq!(parse_arguments("echo 'hello''world'"), vec![vec!["echo", "helloworld"]]);
+        assert_eq!(parse_arguments("echo hello''world"), vec![vec!["echo", "helloworld"]]);
     }
 
     #[test]
     fn test_double_quotes(){
-        assert_eq!(parse_arguments("echo \"hello    world\""), vec!["echo", "hello    world"]);
-        assert_eq!(parse_arguments("echo \"hello\"\"world\""), vec!["echo", "helloworld"]);
-        assert_eq!(parse_arguments("echo \"hello\" \"world\""), vec!["echo", "hello", "world"]);
-        assert_eq!(parse_arguments("echo \"shell's test\""), vec!["echo", "shell's test"]);
+        assert_eq!(parse_arguments("echo \"hello    world\""), vec![vec!["echo", "hello    world"]]);
+        assert_eq!(parse_arguments("echo \"hello\"\"world\""), vec![vec!["echo", "helloworld"]]);
+        assert_eq!(parse_arguments("echo \"hello\" \"world\""), vec![vec!["echo", "hello", "world"]]);
+        assert_eq!(parse_arguments("echo \"shell's test\""), vec![vec!["echo", "shell's test"]]);
     }
 
     #[test]
     fn test_backslash(){
-        assert_eq!(parse_arguments(r"echo three\ \ \ spaces"), vec!["echo", "three   spaces"]);
-        assert_eq!(parse_arguments(r"echo before\     after"), vec!["echo", "before ", "after"]);
-        assert_eq!(parse_arguments(r"echo test\nexample"), vec!["echo", "testnexample"]);
-        assert_eq!(parse_arguments(r"echo hello\\world"), vec!["echo", "hello\\world"]);
-        assert_eq!(parse_arguments(r"echo \'hello\'"), vec!["echo", "'hello'"]); 
+        assert_eq!(parse_arguments(r"echo three\ \ \ spaces"), vec![vec!["echo", "three   spaces"]]);
+        assert_eq!(parse_arguments(r"echo before\     after"), vec![vec!["echo", "before ", "after"]]);
+        assert_eq!(parse_arguments(r"echo test\nexample"), vec![vec!["echo", "testnexample"]]);
+        assert_eq!(parse_arguments(r"echo hello\\world"), vec![vec!["echo", "hello\\world"]]);
+        assert_eq!(parse_arguments(r"echo \'hello\'"), vec![vec!["echo", "'hello'"]]); 
     }
 
     #[test]
     fn test_backslash_single_quotes(){
-        assert_eq!(parse_arguments(r"echo 'shell\\\nscript'"), vec!["echo", r"shell\\\nscript"]);
-        assert_eq!(parse_arguments(r#"echo 'example\"test'"#), vec!["echo", r#"example\"test"#]);
-        assert_eq!(parse_arguments(r"echo 'multiple\\slashes'"), vec!["echo", r"multiple\\slashes"]);
-        assert_eq!(parse_arguments(r#"echo 'every\"thing_is\"literal'"#), vec!["echo", r#"every\"thing_is\"literal"#]);
+        assert_eq!(parse_arguments(r"echo 'shell\\\nscript'"), vec![vec!["echo", r"shell\\\nscript"]]);
+        assert_eq!(parse_arguments(r#"echo 'example\"test'"#), vec![vec!["echo", r#"example\"test"#]]);
+        assert_eq!(parse_arguments(r"echo 'multiple\\slashes'"), vec![vec!["echo", r"multiple\\slashes"]]);
+        assert_eq!(parse_arguments(r#"echo 'every\"thing_is\"literal'"#), vec![vec!["echo", r#"every\"thing_is\"literal"#]]);
     }
 
     #[test]
     fn test_backslash_double_quotes(){
-        assert_eq!(parse_arguments(r#"echo "just'one'\\n'backslash""#), vec!["echo", r#"just'one'\n'backslash"#]);
-        assert_eq!(parse_arguments(r#"echo "inside\"literal_quote."outside\"#), vec!["echo", r#"inside"literal_quote.outside"#]);
+        assert_eq!(parse_arguments(r#"echo "just'one'\\n'backslash""#), vec![vec!["echo", r#"just'one'\n'backslash"#]]);
+        assert_eq!(parse_arguments(r#"echo "inside\"literal_quote."outside\"#), vec![vec!["echo", r#"inside"literal_quote.outside"#]]);
     }
 
     #[test]
     fn test_redirection(){
         let arguments = parse_arguments("echo hello > output.txt");
-        let (command_arguments, redirection) = extract_redirection(&arguments);
+        let (command_arguments, redirection) = extract_redirection(&arguments[0]);
         assert_eq!(command_arguments, vec!["echo", "hello"]);
         assert!(matches!(redirection, Redirection::RedirectStdout(ref path) if path == "output.txt"));
     }

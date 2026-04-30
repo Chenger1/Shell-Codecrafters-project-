@@ -1,4 +1,4 @@
-use std::{env, path};
+use std::env;
 use std::fs;
 use std::os::unix::fs::PermissionsExt;
 use std::path::Path;

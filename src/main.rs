@@ -26,56 +26,49 @@ impl ShellCommand {
         ShellCommand { fs_utils: utils, output: output, redirection: parser::Redirection::Standart}
     }
     
-    pub fn echo(&self, input: Vec<String>){
+    pub fn echo(&self, input: Vec<String>) -> (Option<String>, Option<String>){
         let str_ = input.join(" ");
         let result = format!("{}\n", str_);
-        self.output.sdtout(&result, &self.redirection);
+        (Some(result), None)
     }
 
-    pub fn pwd(&self){
+    pub fn pwd(&self) -> (Option<String>, Option<String>){
         let path = fs::canonicalize(".").unwrap();
         let result = format!("{}\n", path.to_str().unwrap());
-        self.output.sdtout(&result, &self.redirection);
+        (Some(result), None)
     }
 
-    pub fn execute(&self, input: &String, arguments: Vec<String>) -> io::Result<()>{
+    pub fn execute(&self, input: &String, arguments: Vec<String>) -> (Option<String>, Option<String>){
         let executable_file_name = self.fs_utils.is_executable(&input);
         if let Some(_) = executable_file_name {
-            let output = Command::new(input).args(arguments).output()?;
+            let output = Command::new(input).args(arguments).output().unwrap();
             let stdout = String::from_utf8_lossy(&output.stdout).to_string();
             let stderr = String::from_utf8_lossy(&output.stderr).to_string();
-            if !stdout.is_empty(){
-                self.output.sdtout(&stdout, &self.redirection);
-            }
-            if !output.stderr.is_empty(){
-                self.output.stderr(&stderr, &self.redirection);
-            }
+            return (Some(stdout), Some(stderr));
         } else {
             let result = format!("{}: command not found\n", input);
-            self.output.sdtout(&result, &self.redirection);
+            return (None, Some(result));
         }
-        Ok(())
     }
 
-    pub fn type_(&self, input: &String) -> io::Result<()>{
+    pub fn type_(&self, input: &String) -> (Option<String>, Option<String>){
         if BUILTIN_COMMANDS.contains(&input.as_str()) {
             let result = format!("{} is a shell builtin\n", input);
-            self.output.sdtout(&result, &self.redirection);
-            return Ok(());
+            return (Some(result), None);
         };
         
         let executable_file_name = self.fs_utils.is_executable(&input);
         if let Some(file_name) = executable_file_name {
             let result = format!("{} is {}\n", input, file_name);
-            self.output.sdtout(&result, &self.redirection);
+            return (Some(result), None);
         } else {
             let result = format!("{} not found\n", input);
-            self.output.sdtout(&result, &self.redirection);
+            return (None, Some(result));
         }
-        Ok(())
     }
+    
 
-    pub fn cd(&mut self, path: &String) -> std::io::Result<()>{
+    pub fn cd(&mut self, path: &String) -> (Option<String>, Option<String>){
         let mut desired_path = path.to_string();
         if path == "~"{
             let home = env::var("HOME").unwrap();
@@ -85,17 +78,49 @@ impl ShellCommand {
         let is_absolute = Path::new(&desired_path).is_absolute();
         if !self.fs_utils.is_exist(&desired_path, is_absolute){
             let result = format!("cd: {}: No such file or directory\n", desired_path);
-            self.output.sdtout(&result, &self.redirection);
-            return Ok(())
+            return (None, Some(result));
         }
 
         let new_dir = Path::new(&desired_path);
-        env::set_current_dir(&new_dir)?;
+        env::set_current_dir(&new_dir).unwrap();
+        (None, None)
+    }
+
+    pub fn execute_single_command(&mut self, comm : Vec<String>) -> Result<()>{
+        let (command, redirection) = extract_redirection(&comm);
+        self.redirection = redirection;
+        self.output.sdtout(&String::new(), &self.redirection);
+        self.output.stderr(&String::new(), &self.redirection);
+        let (stdout, stderr): (Option<String>, Option<String>) = match command[0].as_str() {
+            "exit" => std::process::exit(0),
+            "pwd" => self.pwd(),
+            "echo" => self.echo(command[1..].to_vec()),
+            "type" => self.type_(&command[1]),
+            "cd" => self.cd(&command[1]),
+            _ => self.execute(&command[0], command[1..].to_vec())
+        };
+        if stdout.is_some(){
+            self.output.sdtout(&stdout.unwrap(), &self.redirection);
+        }
+
+        if stderr.is_some(){
+            self.output.stderr(&stderr.unwrap(), &self.redirection);
+        }
+
+        Ok(())
+    }
+
+    pub fn execute_pipeline(&mut self, commands: Vec<Vec<String>>) -> Result<()>{
+        let mut iter = commands.iter().peekable();
+        
+        while let Some(comm) = iter.next(){
+            let (command, redirection) = extract_redirection(&comm);
+        }
+
         Ok(())
     }
 
 }
-
 
 fn main() -> Result<()>{
     let mut shell_command = ShellCommand::new();
@@ -113,20 +138,15 @@ fn main() -> Result<()>{
         if let Some( h) = rl.helper_mut(){
             h.clear_state();
         }
-        let command = parse_arguments(&input);
-        let (command, redirection) = extract_redirection(&command);
-        shell_command.redirection = redirection;
-        shell_command.output.sdtout(&String::new(), &shell_command.redirection);
-        shell_command.output.stderr(&String::new(), &shell_command.redirection);
-        match command[0].as_str() {
-            "exit" => break,
-            "pwd" => shell_command.pwd(),
-            "echo" => shell_command.echo(command[1..].to_vec()),
-            "type" => shell_command.type_(&command[1]).unwrap(),
-            "cd" => shell_command.cd(&command[1]).unwrap(),
-            _ => shell_command.execute(&command[0], command[1..].to_vec()).unwrap()
+        let commands = parse_arguments(&input);
+        if commands.is_empty(){
+            continue;
+        }
+
+        if commands.len() == 1{
+            shell_command.execute_single_command(commands[0].clone())?;
+        } else {
+            shell_command.execute_pipeline(commands)?;
         }
     }
-
-    Ok(())
 }
