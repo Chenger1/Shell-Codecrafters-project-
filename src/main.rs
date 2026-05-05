@@ -5,6 +5,7 @@ use std::io::{self, Write};
 use std::path::Path;
 use std::process::{Child, Command, Stdio};
 use std::{env, fs};
+use unescape::unescape;
 
 pub mod fs_utils;
 pub mod helper;
@@ -31,6 +32,14 @@ impl ShellCommand {
     }
 
     pub fn echo(&self, input: Vec<String>) -> (Option<String>, Option<String>) {
+        if input[0] == "-e"{
+            let str_ = input[1..].iter()
+                .filter_map(|s| unescape(s))  // returns Option<String>
+                .collect::<Vec<_>>()
+                .join(" ");
+            let result = format!("{}\n", str_);
+            return (Some(result), None);
+        }
         let str_ = input.join(" ");
         let result = format!("{}\n", str_);
         (Some(result), None)
@@ -172,7 +181,7 @@ impl ShellCommand {
                         prev_prc = result;
                         (None, None)
                     } else {
-                        let output = &result.unwrap().wait_with_output().unwrap();
+                        let output = &result.unwrap().wait_with_output()?;
                         let stdout = String::from_utf8_lossy(&output.stdout).to_string();
                         let stderr = String::from_utf8_lossy(&output.stderr).to_string();
                         (Some(stdout), Some(stderr))
@@ -206,6 +215,10 @@ fn main() -> Result<()> {
 
     loop {
         let input = rl.readline("$ ")?;
+        if input.is_empty() {
+            continue;
+        }
+
         if let Some(h) = rl.helper_mut() {
             h.clear_state();
         }
