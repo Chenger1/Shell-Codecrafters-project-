@@ -3,7 +3,7 @@ use rustyline::{CompletionType, Config, Editor, Result};
 #[allow(unused_imports)]
 use std::io::{self, Write};
 use std::path::Path;
-use std::process::{Child, Command, Stdio};
+use std::process::{Child, Command, Stdio, ChildStdout};
 use std::{env, fs};
 use unescape::unescape;
 
@@ -37,7 +37,7 @@ impl ShellCommand {
                 .filter_map(|s| unescape(s))  // returns Option<String>
                 .collect::<Vec<_>>()
                 .join(" ");
-            let result = format!("{}", str_);
+            let result = format!("{}\n", str_);
             return (Some(result), None);
         }
         let str_ = input.join(" ");
@@ -58,7 +58,10 @@ impl ShellCommand {
     ) -> (Option<String>, Option<String>) {
         let executable_file_name = self.fs_utils.is_executable(&input);
         if let Some(_) = executable_file_name {
-            let output = Command::new(input).args(arguments).output().unwrap();
+            let output = Command::new(input)
+                .args(arguments)
+                .output()
+                .unwrap();
             let stdout = String::from_utf8_lossy(&output.stdout).to_string();
             let stderr = String::from_utf8_lossy(&output.stderr).to_string();
             (Some(stdout), Some(stderr))
@@ -72,14 +75,14 @@ impl ShellCommand {
         &self,
         input: &String,
         arguments: Vec<String>,
-        stdin: Option<Child>,
+        stdin: Option<ChildStdout>,
     ) -> Option<Child> {
         let executable_file_name = self.fs_utils.is_executable(&input);
         if let Some(_) = executable_file_name {
-            if let Some(child) = stdin {
+            if let Some(stdout) = stdin {
                 let output = Command::new(input)
                     .args(arguments)
-                    .stdin(Stdio::from(child.stdout.unwrap()))
+                    .stdin(Stdio::from(stdout))
                     .stdout(Stdio::piped())
                     .spawn()
                     .unwrap();
@@ -157,7 +160,8 @@ impl ShellCommand {
 
     pub fn run_pipeline(&mut self, commands: Vec<Vec<String>>) -> Result<()> {
         let mut iter = commands.iter().peekable();
-        let mut prev_prc: Option<Child> = None;
+        let mut prev_prc: Option<ChildStdout> = None;
+        let mut children: Vec<Child> = Vec::new();
 
         while let Some(comm) = iter.next() {
             let (command, redirection) = extract_redirection(&comm);
@@ -178,10 +182,15 @@ impl ShellCommand {
                         prev_prc.take(),
                     );
                     if iter.peek().is_some() {
-                        prev_prc = result;
+                        let mut child = result.unwrap();
+                        prev_prc = Some(child.stdout.take().unwrap());
+                        children.push(child);
                         (None, None)
                     } else {
-                        let output = &result.unwrap().wait_with_output()?;
+                        let output = &result.unwrap().wait_with_output().unwrap();
+                        for child in &mut children {
+                            let _ = child.wait();
+                        }
                         let stdout = String::from_utf8_lossy(&output.stdout).to_string();
                         let stderr = String::from_utf8_lossy(&output.stderr).to_string();
                         (Some(stdout), Some(stderr))
