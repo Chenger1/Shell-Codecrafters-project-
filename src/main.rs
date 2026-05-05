@@ -1,4 +1,4 @@
-use parser::{extract_redirection, parse_arguments};
+use parser::{extract_redirection, parse_arguments, Redirection};
 use rustyline::{CompletionType, Config, Editor, Result};
 #[allow(unused_imports)]
 use std::io::{self, Write};
@@ -76,21 +76,22 @@ impl ShellCommand {
         input: &String,
         arguments: Vec<String>,
         stdin: Option<ChildStdout>,
+        stdout: Stdio,
     ) -> Option<Child> {
         let executable_file_name = self.fs_utils.is_executable(&input);
         if let Some(_) = executable_file_name {
-            if let Some(stdout) = stdin {
+            if let Some(prev_out) = stdin {
                 let output = Command::new(input)
                     .args(arguments)
-                    .stdin(Stdio::from(stdout))
-                    .stdout(Stdio::piped())
+                    .stdin(Stdio::from(prev_out))
+                    .stdout(stdout)
                     .spawn()
                     .unwrap();
                 Some(output)
             } else {
                 let output = Command::new(input)
                     .args(arguments)
-                    .stdout(Stdio::piped())
+                    .stdout(stdout)
                     .spawn()
                     .unwrap();
                 Some(output)
@@ -176,24 +177,39 @@ impl ShellCommand {
                 "type" => self.type_(&command[1]),
                 "cd" => self.cd(&command[1]),
                 _ => {
-                    let result = self.execute_in_pipeline(
-                        &command[0],
-                        command[1..].to_vec(),
-                        prev_prc.take(),
-                    );
                     if iter.peek().is_some() {
+                        let result = self.execute_in_pipeline(
+                            &command[0],
+                            command[1..].to_vec(),
+                            prev_prc.take(),
+                            Stdio::piped(),
+                        );
                         let mut child = result.unwrap();
                         prev_prc = Some(child.stdout.take().unwrap());
                         children.push(child);
                         (None, None)
                     } else {
-                        let output = &result.unwrap().wait_with_output().unwrap();
-                        for child in &mut children {
+                        let stdout_stdio = match &self.redirection {
+                            Redirection::RedirectStdout(path) =>
+                                Stdio::from(fs::File::create(path).unwrap()),
+                            Redirection::AppendStdout(path) =>
+                                Stdio::from(fs::File::options().append(true).create(true).open(path).unwrap()),
+                            _ => Stdio::inherit(),
+                        };
+                        let result = self.execute_in_pipeline(
+                            &command[0],
+                            command[1..].to_vec(),
+                            prev_prc.take(),
+                            stdout_stdio,
+                        );
+                        if let Some(mut child) = result {
                             let _ = child.wait();
                         }
-                        let stdout = String::from_utf8_lossy(&output.stdout).to_string();
-                        let stderr = String::from_utf8_lossy(&output.stderr).to_string();
-                        (Some(stdout), Some(stderr))
+                        for child in &mut children {
+                            let _ = child.kill();
+                            let _ = child.wait();
+                        }
+                        (None, None)
                     }
                 }
             };
