@@ -37,7 +37,7 @@ impl ShellCommand {
                 .filter_map(|s| unescape(s))  // returns Option<String>
                 .collect::<Vec<_>>()
                 .join(" ");
-            let result = format!("{}\n", str_);
+            let result = format!("{}", str_);
             return (Some(result), None);
         }
         let str_ = input.join(" ");
