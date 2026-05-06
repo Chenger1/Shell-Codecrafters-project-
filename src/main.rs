@@ -139,11 +139,15 @@ impl ShellCommand {
         (None, None)
     }
 
-    pub fn history(&self) -> (Option<String>, Option<String>){
-        let history = self.history.list_all_commands();
+    pub fn history(&self, args: Vec<String>) -> (Option<String>, Option<String>){
+        let mut history = self.history.list_all_commands();
+        if !args.is_empty() {
+            let number_of_commands = args[0].parse::<usize>().unwrap();
+            history.drain(number_of_commands..);
+        }
 
         let mut result = String::new();
-        for (i, command) in history.iter().enumerate() {
+        for (i, command) in history.iter().rev() {
             result.push_str(&format!("\t{} {}\n", i+1, command));
         }
         (Some(result), None)
@@ -161,7 +165,7 @@ impl ShellCommand {
             "echo" => self.echo(command[1..].to_vec()),
             "type" => self.type_(&command[1]),
             "cd" => self.cd(&command[1]),
-            "history" => self.history(),
+            "history" => self.history(command[1..].to_vec()),
             _ => self.execute(&command[0], command[1..].to_vec()),
         };
         if stdout.is_some() {
@@ -193,7 +197,7 @@ impl ShellCommand {
                 "echo" => self.echo(command[1..].to_vec()),
                 "type" => self.type_(&command[1]),
                 "cd" => self.cd(&command[1]),
-                "history" => self.history(),
+                "history" => self.history(command[1..].to_vec()),
                 _ => {
                     if iter.peek().is_some() {
                         let result = self.execute_in_pipeline(
