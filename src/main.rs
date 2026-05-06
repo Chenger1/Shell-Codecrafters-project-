@@ -1,9 +1,9 @@
 use parser::{extract_redirection, parse_arguments, Redirection};
 use rustyline::{CompletionType, Config, Editor, Result};
 #[allow(unused_imports)]
-use std::io::{self, Write};
+use std::io::{self, Write, pipe};
 use std::path::Path;
-use std::process::{Child, Command, Stdio, ChildStdout};
+use std::process::{Child, Command, Stdio};
 use std::{env, fs};
 use unescape::unescape;
 
@@ -75,7 +75,7 @@ impl ShellCommand {
         &self,
         input: &String,
         arguments: Vec<String>,
-        stdin: Option<ChildStdout>,
+        stdin: Option<Stdio>,
         stdout: Stdio,
     ) -> Option<Child> {
         let executable_file_name = self.fs_utils.is_executable(&input);
@@ -83,7 +83,7 @@ impl ShellCommand {
             if let Some(prev_out) = stdin {
                 let output = Command::new(input)
                     .args(arguments)
-                    .stdin(Stdio::from(prev_out))
+                    .stdin(prev_out)
                     .stdout(stdout)
                     .spawn()
                     .unwrap();
@@ -161,7 +161,7 @@ impl ShellCommand {
 
     pub fn run_pipeline(&mut self, commands: Vec<Vec<String>>) -> Result<()> {
         let mut iter = commands.iter().peekable();
-        let mut prev_prc: Option<ChildStdout> = None;
+        let mut prev_prc: Option<Stdio> = None;
         let mut children: Vec<Child> = Vec::new();
 
         while let Some(comm) = iter.next() {
@@ -185,7 +185,7 @@ impl ShellCommand {
                             Stdio::piped(),
                         );
                         let mut child = result.unwrap();
-                        prev_prc = Some(child.stdout.take().unwrap());
+                        prev_prc = Some(Stdio::from(child.stdout.take().unwrap()));
                         children.push(child);
                         (None, None)
                     } else {
@@ -215,7 +215,14 @@ impl ShellCommand {
             };
 
             if stdout.is_some(){
-                self.output.sdtout(&stdout.unwrap(), &self.redirection);
+                if iter.peek().is_some() {
+                    let (reader, mut writer) = std::io::pipe()?;
+                    writer.write_all(stdout.unwrap().as_bytes())?;
+                    drop(writer);
+                    prev_prc = Some(Stdio::from(reader));
+                }else{
+                    self.output.sdtout(&stdout.unwrap(), &self.redirection);
+                }
             }
 
             if stderr.is_some(){
