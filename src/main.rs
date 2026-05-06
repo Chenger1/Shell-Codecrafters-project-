@@ -11,23 +11,27 @@ pub mod fs_utils;
 pub mod helper;
 pub mod output;
 pub mod parser;
+mod history;
 
-const BUILTIN_COMMANDS: [&'static str; 5] = ["echo", "exit", "type", "pwd", "cd"];
+const BUILTIN_COMMANDS: [&'static str; 6] = ["echo", "exit", "type", "pwd", "cd", "history"];
 
 struct ShellCommand {
     pub fs_utils: fs_utils::FSUtils,
     output: output::Output,
     pub redirection: parser::Redirection,
+    pub history: history::History,
 }
 
 impl ShellCommand {
     pub fn new() -> Self {
         let utils = fs_utils::FSUtils::new();
         let output = output::Output::new();
+        let history = history::History::new();
         ShellCommand {
             fs_utils: utils,
-            output: output,
+            output,
             redirection: parser::Redirection::Standart,
+            history,
         }
     }
 
@@ -135,8 +139,19 @@ impl ShellCommand {
         (None, None)
     }
 
+    pub fn history(&self) -> (Option<String>, Option<String>){
+        let history = self.history.list_all_commands();
+
+        let mut result = String::new();
+        for (i, command) in history.iter().enumerate() {
+            result.push_str(&format!("\t{} {}\n", i+1, command));
+        }
+        (Some(result), None)
+    }
+
     pub fn run_single_command(&mut self, comm: Vec<String>) -> Result<()> {
         let (command, redirection) = extract_redirection(&comm);
+        self.history.add_command(comm.join(" "));
         self.redirection = redirection;
         self.output.sdtout(&String::new(), &self.redirection);
         self.output.stderr(&String::new(), &self.redirection);
@@ -146,6 +161,7 @@ impl ShellCommand {
             "echo" => self.echo(command[1..].to_vec()),
             "type" => self.type_(&command[1]),
             "cd" => self.cd(&command[1]),
+            "history" => self.history(),
             _ => self.execute(&command[0], command[1..].to_vec()),
         };
         if stdout.is_some() {
@@ -166,6 +182,7 @@ impl ShellCommand {
 
         while let Some(comm) = iter.next() {
             let (command, redirection) = extract_redirection(&comm);
+            self.history.add_command(comm.join(" "));
             self.redirection = redirection;
             self.output.sdtout(&String::new(), &self.redirection);
             self.output.stderr(&String::new(), &self.redirection);
@@ -176,6 +193,7 @@ impl ShellCommand {
                 "echo" => self.echo(command[1..].to_vec()),
                 "type" => self.type_(&command[1]),
                 "cd" => self.cd(&command[1]),
+                "history" => self.history(),
                 _ => {
                     if iter.peek().is_some() {
                         let result = self.execute_in_pipeline(

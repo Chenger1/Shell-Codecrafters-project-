@@ -8,7 +8,7 @@ use prefix_tree_rs::Trie;
 pub struct CommandLineHelper{
     builtin_prefix_tree: Trie,
     path_prefix_tree: Trie,
-    builtin_command: [&'static str; 5],
+    builtin_command: [&'static str; 6],
     path_names: Vec<String>,
     last_prompt: RefCell<Option<String>>,
     filename_completer: FilenameCompleter,
@@ -16,7 +16,7 @@ pub struct CommandLineHelper{
 }
 
 impl CommandLineHelper{
-    pub fn new(command: [&'static str; 5], path_executables: Vec<String>) -> CommandLineHelper{
+    pub fn new(command: [&'static str; 6], path_executables: Vec<String>) -> CommandLineHelper{
         let fc = FilenameCompleter::new();
         let mut trie = Trie::new();
         for word in command{
