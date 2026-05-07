@@ -1,7 +1,7 @@
-use parser::{extract_redirection, parse_arguments, Redirection};
-use rustyline::{CompletionType, Config, Editor, Result};
 #[allow(unused_imports)]
-use std::io::{self, Write, pipe};
+use parser::{extract_redirection, parse_arguments, Redirection};
+use rustyline::{CompletionType, Config, Editor, Result, KeyEvent, Cmd};
+use std::io::Write;
 use std::path::Path;
 use std::process::{Child, Command, Stdio};
 use std::{env, fs};
@@ -31,7 +31,7 @@ impl ShellCommand {
             fs_utils: utils,
             output,
             redirection: parser::Redirection::Standart,
-            history,
+            history
         }
     }
 
@@ -53,26 +53,6 @@ impl ShellCommand {
         let path = fs::canonicalize(".").unwrap();
         let result = format!("{}\n", path.to_str().unwrap());
         (Some(result), None)
-    }
-
-    pub fn execute(
-        &self,
-        input: &String,
-        arguments: Vec<String>,
-    ) -> (Option<String>, Option<String>) {
-        let executable_file_name = self.fs_utils.is_executable(&input);
-        if let Some(_) = executable_file_name {
-            let output = Command::new(input)
-                .args(arguments)
-                .output()
-                .unwrap();
-            let stdout = String::from_utf8_lossy(&output.stdout).to_string();
-            let stderr = String::from_utf8_lossy(&output.stderr).to_string();
-            (Some(stdout), Some(stderr))
-        } else {
-            let result = format!("{}: command not found\n", input);
-            (None, Some(result))
-        }
     }
 
     pub fn execute_in_pipeline(
@@ -153,40 +133,13 @@ impl ShellCommand {
         (Some(result), None)
     }
 
-    pub fn run_single_command(&mut self, comm: Vec<String>) -> Result<()> {
-        let (command, redirection) = extract_redirection(&comm);
-        self.history.add_command(comm.join(" "));
-        self.redirection = redirection;
-        self.output.sdtout(&String::new(), &self.redirection);
-        self.output.stderr(&String::new(), &self.redirection);
-        let (stdout, stderr): (Option<String>, Option<String>) = match command[0].as_str() {
-            "exit" => std::process::exit(0),
-            "pwd" => self.pwd(),
-            "echo" => self.echo(command[1..].to_vec()),
-            "type" => self.type_(&command[1]),
-            "cd" => self.cd(&command[1]),
-            "history" => self.history(command[1..].to_vec()),
-            _ => self.execute(&command[0], command[1..].to_vec()),
-        };
-        if stdout.is_some() {
-            self.output.sdtout(&stdout.unwrap(), &self.redirection);
-        }
-
-        if stderr.is_some() {
-            self.output.stderr(&stderr.unwrap(), &self.redirection);
-        }
-
-        Ok(())
-    }
-
-    pub fn run_pipeline(&mut self, commands: Vec<Vec<String>>) -> Result<()> {
+    pub fn run_command(&mut self, commands: Vec<Vec<String>>) -> Result<()> {
         let mut iter = commands.iter().peekable();
         let mut prev_prc: Option<Stdio> = None;
         let mut children: Vec<Child> = Vec::new();
 
         while let Some(comm) = iter.next() {
             let (command, redirection) = extract_redirection(&comm);
-            self.history.add_command(comm.join(" "));
             self.redirection = redirection;
             self.output.sdtout(&String::new(), &self.redirection);
             self.output.stderr(&String::new(), &self.redirection);
@@ -266,6 +219,8 @@ fn main() -> Result<()> {
     let path_executables = shell_command.fs_utils.get_path_executables();
     let helper = helper::CommandLineHelper::new(BUILTIN_COMMANDS, path_executables);
     rl.set_helper(Some(helper));
+    rl.bind_sequence(KeyEvent::alt('n'), Cmd::HistorySearchForward);
+    rl.bind_sequence(KeyEvent::alt('p'), Cmd::HistorySearchBackward);
 
     loop {
         let input = rl.readline("$ ")?;
@@ -281,10 +236,10 @@ fn main() -> Result<()> {
             continue;
         }
 
-        if commands.len() == 1 {
-            shell_command.run_single_command(commands[0].clone())?;
-        } else {
-            shell_command.run_pipeline(commands)?;
+        for comm in &commands{
+            rl.add_history_entry(comm.join(" ")).unwrap();
+            shell_command.history.add_command(comm.join(" "));
         }
+        shell_command.run_command(commands)?;
     }
 }

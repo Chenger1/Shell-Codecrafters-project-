@@ -4,6 +4,7 @@ use std::{cell::RefCell};
 use rustyline::completion::{Completer, FilenameCompleter};
 use rustyline::completion::Pair as RustyPair;
 use prefix_tree_rs::Trie;
+use rustyline::hint::HistoryHinter;
 
 pub struct CommandLineHelper{
     builtin_prefix_tree: Trie,
@@ -12,7 +13,8 @@ pub struct CommandLineHelper{
     path_names: Vec<String>,
     last_prompt: RefCell<Option<String>>,
     filename_completer: FilenameCompleter,
-    first_tab: RefCell<bool>
+    first_tab: RefCell<bool>,
+    hinter: HistoryHinter,
 }
 
 impl CommandLineHelper{
@@ -34,7 +36,8 @@ impl CommandLineHelper{
             path_names: path_executables,
             last_prompt: RefCell::new(None),
             filename_completer: fc,
-            first_tab: RefCell::new(false)
+            first_tab: RefCell::new(false),
+            hinter: HistoryHinter::new(),
         }
     }
 
