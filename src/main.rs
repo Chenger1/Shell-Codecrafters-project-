@@ -159,10 +159,14 @@ impl ShellCommand {
                             prev_prc.take(),
                             Stdio::piped(),
                         );
-                        let mut child = result.unwrap();
-                        prev_prc = Some(Stdio::from(child.stdout.take().unwrap()));
-                        children.push(child);
-                        (None, None)
+                        if result.is_none(){
+                            (None, Some(format!("{}: command not found\n", command[0])))
+                        }else{
+                            let mut child = result.unwrap();
+                            prev_prc = Some(Stdio::from(child.stdout.take().unwrap()));
+                            children.push(child);
+                            (None, None)
+                        }
                     } else {
                         let stdout_stdio = match &self.redirection {
                             Redirection::RedirectStdout(path) =>
@@ -177,14 +181,19 @@ impl ShellCommand {
                             prev_prc.take(),
                             stdout_stdio,
                         );
-                        if let Some(mut child) = result {
-                            let _ = child.wait();
+                        if result.is_none(){
+                            (None, Some(format!("{}: command not found\n", command[0])))
+                        }else{
+                            if let Some(mut child) = result {
+                                let _ = child.wait();
+                            }
+                            for child in &mut children {
+                                let _ = child.kill();
+                                let _ = child.wait();
+                            }
+                            (None, None)
                         }
-                        for child in &mut children {
-                            let _ = child.kill();
-                            let _ = child.wait();
-                        }
-                        (None, None)
+
                     }
                 }
             };

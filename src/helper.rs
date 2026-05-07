@@ -14,6 +14,7 @@ pub struct CommandLineHelper{
     last_prompt: RefCell<Option<String>>,
     filename_completer: FilenameCompleter,
     first_tab: RefCell<bool>,
+    #[allow(unused)]
     hinter: HistoryHinter,
 }
 
