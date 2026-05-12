@@ -186,6 +186,13 @@ impl ShellCommand {
         }
     }
 
+    pub fn exit(&self, rl_history: &mut DefaultHistory){
+        let history_file = env::var("HISTFILE");
+        if let Some(path) = history_file.ok() {
+            rl_history.append(Path::new(&path)).unwrap();
+        }
+    }
+
     pub fn run_command(
         &mut self,
         commands: Vec<Vec<String>>,
@@ -203,7 +210,10 @@ impl ShellCommand {
             self.output.stderr(&String::new(), &self.redirection);
 
             let (stdout, stderr): (Option<String>, Option<String>) = match command[0].as_str() {
-                "exit" => std::process::exit(0),
+                "exit" => {
+                    self.exit(rl_history);
+                    std::process::exit(0)
+                },
                 "pwd" => self.pwd(),
                 "echo" => self.echo(command[1..].to_vec()),
                 "type" => self.type_(&command[1]),
