@@ -161,6 +161,7 @@ impl ShellCommand {
             }
             (Some("-a"), Some(path)) => {
                 rl_history.append(Path::new(&path)).unwrap();
+                strip_history_header(Path::new(path)).unwrap();
                 (None, None)
             }
             _ => {
@@ -288,7 +289,6 @@ impl ShellCommand {
 // By assignment, the file has to contain only commands
 // Remove header after write to the file and add before load from it
 fn strip_history_header(path: &Path) -> std::io::Result<()> {
-
     let content = fs::read_to_string(path)?;
     let stripped = content.find('\n').map(|i| &content[i + 1..]).unwrap_or("");
     fs::write(path, stripped)
