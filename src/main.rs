@@ -63,12 +63,14 @@ impl ShellCommand {
         stdout: Stdio,
     ) -> Option<Child> {
         let executable_file_name = self.fs_utils.is_executable(&input);
+        let stderr = Stdio::piped();
         if let Some(_) = executable_file_name {
             if let Some(prev_out) = stdin {
                 let output = Command::new(input)
                     .args(arguments)
                     .stdin(prev_out)
                     .stdout(stdout)
+                    .stderr(stderr)
                     .spawn()
                     .unwrap();
                 Some(output)
@@ -76,6 +78,7 @@ impl ShellCommand {
                 let output = Command::new(input)
                     .args(arguments)
                     .stdout(stdout)
+                    .stderr(stderr)
                     .spawn()
                     .unwrap();
                 Some(output)
@@ -182,17 +185,21 @@ impl ShellCommand {
                             prev_prc.take(),
                             stdout_stdio,
                         );
+                        let mut stdout: Option<String> = None;
+                        let mut stderr: Option<String> = None;
                         if result.is_none(){
                             (None, Some(format!("{}: command not found\n", command[0])))
                         }else{
-                            if let Some(mut child) = result {
-                                let _ = child.wait();
+                            if let Some(child) = result {
+                                let output = child.wait_with_output()?;
+                                stdout = Some(String::from_utf8_lossy(&output.stdout).to_string());
+                                stderr = Some(String::from_utf8_lossy(&output.stderr).to_string());
                             }
                             for child in &mut children {
                                 let _ = child.kill();
                                 let _ = child.wait();
                             }
-                            (None, None)
+                            (stdout, stderr)
                         }
 
                     }
