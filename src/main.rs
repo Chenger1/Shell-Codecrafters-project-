@@ -120,14 +120,15 @@ impl ShellCommand {
     }
 
     pub fn history(&self, args: Vec<String>) -> (Option<String>, Option<String>){
-        let mut history = self.history.list_all_commands();
-        if !args.is_empty() {
+        let history = if !args.is_empty(){
             let number_of_commands = args[0].parse::<usize>().unwrap();
-            history.drain(number_of_commands..);
-        }
+            self.history.last_n(number_of_commands)
+        }else{
+            self.history.commands()
+        };
 
         let mut result = String::new();
-        for (i, command) in history.iter().rev() {
+        for (i, command) in history {
             result.push_str(&format!("\t{} {}\n", i+1, command));
         }
         (Some(result), None)
