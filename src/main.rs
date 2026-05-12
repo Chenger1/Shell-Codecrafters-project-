@@ -132,7 +132,7 @@ impl ShellCommand {
         };
         match (flag, args.get(1)) {
             (Some("-r"), Some(path)) => {
-                if rl_history.load(Path::new(&path)).is_err() {
+                if prepend_history_header(Path::new(path)).is_err() {
                     return (
                         None,
                         Some(format!(
@@ -140,11 +140,23 @@ impl ShellCommand {
                             path
                         )),
                     );
-                };
+                }
+                let load_result = rl_history.load(Path::new(path));
+                strip_history_header(Path::new(path)).ok();
+                if load_result.is_err() {
+                    return (
+                        None,
+                        Some(format!(
+                            "history: cannot read history file '{}': No such file or directory\n",
+                            path
+                        )),
+                    );
+                }
                 (None, None)
             }
             (Some("-w"), Some(path)) => {
-                rl_history.save(Path::new(&path)).unwrap();
+                rl_history.save(Path::new(path)).unwrap();
+                strip_history_header(Path::new(path)).unwrap();
                 (None, None)
             }
             (Some("-a"), Some(path)) => {
@@ -270,6 +282,21 @@ impl ShellCommand {
 
         Ok(())
     }
+}
+
+// Rustyline always add header to the file
+// By assignment, the file has to contain only commands
+// Remove header after write to the file and add before load from it
+fn strip_history_header(path: &Path) -> std::io::Result<()> {
+
+    let content = fs::read_to_string(path)?;
+    let stripped = content.find('\n').map(|i| &content[i + 1..]).unwrap_or("");
+    fs::write(path, stripped)
+}
+
+fn prepend_history_header(path: &Path) -> std::io::Result<()> {
+    let content = fs::read_to_string(path)?;
+    fs::write(path, format!("#V2\n{}", content))
 }
 
 fn main() -> Result<()> {
