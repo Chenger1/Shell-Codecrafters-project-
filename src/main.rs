@@ -1,6 +1,7 @@
 #[allow(unused_imports)]
-use parser::{extract_redirection, parse_arguments, Redirection};
-use rustyline::{CompletionType, Config, Editor, Result, KeyEvent, Cmd};
+use parser::{Redirection, extract_redirection, parse_arguments};
+use rustyline::history::{DefaultHistory, History};
+use rustyline::{Cmd, CompletionType, Config, Editor, KeyEvent, Result};
 use std::io::Write;
 use std::path::Path;
 use std::process::{Child, Command, Stdio};
@@ -11,7 +12,6 @@ pub mod fs_utils;
 pub mod helper;
 pub mod output;
 pub mod parser;
-mod history;
 
 const BUILTIN_COMMANDS: [&'static str; 6] = ["echo", "exit", "type", "pwd", "cd", "history"];
 
@@ -19,26 +19,24 @@ struct ShellCommand {
     pub fs_utils: fs_utils::FSUtils,
     output: output::Output,
     pub redirection: parser::Redirection,
-    pub history: history::History,
 }
 
 impl ShellCommand {
     pub fn new() -> Self {
         let utils = fs_utils::FSUtils::new();
         let output = output::Output::new();
-        let history = history::History::new();
         ShellCommand {
             fs_utils: utils,
             output,
             redirection: parser::Redirection::Standart,
-            history
         }
     }
 
     pub fn echo(&self, input: Vec<String>) -> (Option<String>, Option<String>) {
-        if input[0] == "-e"{
-            let str_ = input[1..].iter()
-                .filter_map(|s| unescape(s))  // returns Option<String>
+        if input[0] == "-e" {
+            let str_ = input[1..]
+                .iter()
+                .filter_map(|s| unescape(s)) // returns Option<String>
                 .collect::<Vec<_>>()
                 .join(" ");
             let result = format!("{}\n", str_);
@@ -122,28 +120,71 @@ impl ShellCommand {
         (None, None)
     }
 
-    pub fn history(&self, args: Vec<String>) -> (Option<String>, Option<String>){
-        let history = if !args.is_empty(){
-            let number_of_commands = args[0].parse::<usize>().unwrap();
-            self.history.last_n(number_of_commands)
-        }else{
-            self.history.commands()
+    pub fn history(
+        &mut self,
+        args: Vec<String>,
+        rl_history: &mut DefaultHistory,
+    ) -> (Option<String>, Option<String>) {
+        let flag: Option<&str> = if let Some(flag) = args.first() {
+            Some(flag.as_str())
+        } else {
+            None
         };
+        match (flag, args.get(1)) {
+            (Some("-r"), Some(path)) => {
+                if rl_history.load(Path::new(&path)).is_err() {
+                    return (
+                        None,
+                        Some(format!(
+                            "history: cannot read history file '{}': No such file or directory\n",
+                            path
+                        )),
+                    );
+                };
+                (None, None)
+            }
+            (Some("-w"), Some(path)) => {
+                rl_history.save(Path::new(&path)).unwrap();
+                (None, None)
+            }
+            (Some("-a"), Some(path)) => {
+                rl_history.append(Path::new(&path)).unwrap();
+                (None, None)
+            }
+            _ => {
+                let mut history: Vec<(usize, &String)> = vec![];
+                let history_indexed: Vec<(usize, &String)> = rl_history.into_iter().enumerate().collect();
+                if let Some(number_of_commands) = flag{
+                    let number_to_skip = number_of_commands.parse::<usize>();
+                    if number_to_skip.is_ok(){
+                        let skip = history_indexed.len().saturating_sub(number_to_skip.unwrap());
+                        history = history_indexed.into_iter().skip(skip).collect();
+                    }
+                }else{
+                    history = history_indexed.into_iter().collect();
+                }
 
-        let mut result = String::new();
-        for (i, command) in history {
-            result.push_str(&format!("\t{} {}\n", i+1, command));
+                let mut result = String::new();
+                for (i, command) in history.iter() {
+                    result.push_str(&format!("\t{} {}\n", i + 1, command));
+                }
+                (Some(result), None)
+            }
         }
-        (Some(result), None)
     }
 
-    pub fn run_command(&mut self, commands: Vec<Vec<String>>) -> Result<()> {
+    pub fn run_command(
+        &mut self,
+        commands: Vec<Vec<String>>,
+        rl_history: &mut DefaultHistory,
+    ) -> Result<()> {
         let mut iter = commands.iter().peekable();
         let mut prev_prc: Option<Stdio> = None;
         let mut children: Vec<Child> = Vec::new();
 
         while let Some(comm) = iter.next() {
             let (command, redirection) = extract_redirection(&comm);
+            rl_history.add(&command.join(" "))?;
             self.redirection = redirection;
             self.output.sdtout(&String::new(), &self.redirection);
             self.output.stderr(&String::new(), &self.redirection);
@@ -154,7 +195,7 @@ impl ShellCommand {
                 "echo" => self.echo(command[1..].to_vec()),
                 "type" => self.type_(&command[1]),
                 "cd" => self.cd(&command[1]),
-                "history" => self.history(command[1..].to_vec()),
+                "history" => self.history(command[1..].to_vec(), rl_history),
                 _ => {
                     if iter.peek().is_some() {
                         let result = self.execute_in_pipeline(
@@ -163,9 +204,9 @@ impl ShellCommand {
                             prev_prc.take(),
                             Stdio::piped(),
                         );
-                        if result.is_none(){
+                        if result.is_none() {
                             (None, Some(format!("{}: command not found\n", command[0])))
-                        }else{
+                        } else {
                             let mut child = result.unwrap();
                             prev_prc = Some(Stdio::from(child.stdout.take().unwrap()));
                             children.push(child);
@@ -173,10 +214,16 @@ impl ShellCommand {
                         }
                     } else {
                         let stdout_stdio = match &self.redirection {
-                            Redirection::RedirectStdout(path) =>
-                                Stdio::from(fs::File::create(path).unwrap()),
-                            Redirection::AppendStdout(path) =>
-                                Stdio::from(fs::File::options().append(true).create(true).open(path).unwrap()),
+                            Redirection::RedirectStdout(path) => {
+                                Stdio::from(fs::File::create(path).unwrap())
+                            }
+                            Redirection::AppendStdout(path) => Stdio::from(
+                                fs::File::options()
+                                    .append(true)
+                                    .create(true)
+                                    .open(path)
+                                    .unwrap(),
+                            ),
                             _ => Stdio::inherit(),
                         };
                         let result = self.execute_in_pipeline(
@@ -187,9 +234,9 @@ impl ShellCommand {
                         );
                         let mut stdout: Option<String> = None;
                         let mut stderr: Option<String> = None;
-                        if result.is_none(){
+                        if result.is_none() {
                             (None, Some(format!("{}: command not found\n", command[0])))
-                        }else{
+                        } else {
                             if let Some(child) = result {
                                 let output = child.wait_with_output()?;
                                 stdout = Some(String::from_utf8_lossy(&output.stdout).to_string());
@@ -201,23 +248,22 @@ impl ShellCommand {
                             }
                             (stdout, stderr)
                         }
-
                     }
                 }
             };
 
-            if stdout.is_some(){
+            if stdout.is_some() {
                 if iter.peek().is_some() {
                     let (reader, mut writer) = std::io::pipe()?;
                     writer.write_all(stdout.unwrap().as_bytes())?;
                     drop(writer);
                     prev_prc = Some(Stdio::from(reader));
-                }else{
+                } else {
                     self.output.sdtout(&stdout.unwrap(), &self.redirection);
                 }
             }
 
-            if stderr.is_some(){
+            if stderr.is_some() {
                 self.output.stderr(&stderr.unwrap(), &self.redirection);
             }
         }
@@ -252,11 +298,7 @@ fn main() -> Result<()> {
         if commands.is_empty() {
             continue;
         }
-
-        for comm in &commands{
-            rl.add_history_entry(comm.join(" ")).unwrap();
-            shell_command.history.add_command(comm.join(" "));
-        }
-        shell_command.run_command(commands)?;
+        let mut rl_history = rl.history_mut();
+        shell_command.run_command(commands, &mut rl_history)?;
     }
 }
