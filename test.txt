@@ -1,0 +1,3 @@
+ls
+echo 123
+history -w test.txt

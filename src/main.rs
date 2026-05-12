@@ -285,7 +285,7 @@ impl ShellCommand {
     }
 }
 
-// Rustyline always add header to the file
+// Rustyline always adds header to the file
 // By assignment, the file has to contain only commands
 // Remove header after write to the file and add before load from it
 fn strip_history_header(path: &Path) -> std::io::Result<()> {
@@ -311,6 +311,11 @@ fn main() -> Result<()> {
     rl.set_helper(Some(helper));
     rl.bind_sequence(KeyEvent::alt('n'), Cmd::HistorySearchForward);
     rl.bind_sequence(KeyEvent::alt('p'), Cmd::HistorySearchBackward);
+
+    let history_file = env::var("HISTFILE");
+    if let Some(path) = history_file.ok() {
+        rl.load_history(Path::new(&path))?;
+    }
 
     loop {
         let input = rl.readline("$ ")?;
