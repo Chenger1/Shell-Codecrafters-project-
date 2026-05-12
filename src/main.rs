@@ -190,6 +190,7 @@ impl ShellCommand {
         let history_file = env::var("HISTFILE");
         if let Some(path) = history_file.ok() {
             rl_history.append(Path::new(&path)).unwrap();
+            strip_history_header(Path::new(&path)).unwrap();
         }
     }
 
@@ -324,7 +325,9 @@ fn main() -> Result<()> {
 
     let history_file = env::var("HISTFILE");
     if let Some(path) = history_file.ok() {
+        prepend_history_header(Path::new(&path))?;
         rl.load_history(Path::new(&path))?;
+        strip_history_header(Path::new(&path))?;
     }
 
     loop {
