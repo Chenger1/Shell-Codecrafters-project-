@@ -290,7 +290,7 @@ impl ShellCommand {
 // Remove header after write to the file and add before load from it
 fn strip_history_header(path: &Path) -> std::io::Result<()> {
     let content = fs::read_to_string(path)?;
-    let stripped = content.find('\n').map(|i| &content[i + 1..]).unwrap_or("");
+    let stripped = content.strip_prefix("#V2\n").unwrap_or(&content);
     fs::write(path, stripped)
 }
 
