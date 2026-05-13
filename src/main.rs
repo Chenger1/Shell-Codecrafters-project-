@@ -7,11 +7,13 @@ use std::path::Path;
 use std::process::{Child, Command, Stdio};
 use std::{env, fs};
 use unescape::unescape;
+use jobs::{Jobs, Job};
 
 pub mod fs_utils;
 pub mod helper;
 pub mod output;
 pub mod parser;
+pub mod jobs;
 
 const BUILTIN_COMMANDS: [&'static str; 7] = ["echo", "exit", "type", "pwd", "cd", "history", "jobs"];
 
@@ -19,18 +21,21 @@ struct ShellCommand {
     pub fs_utils: fs_utils::FSUtils,
     output: output::Output,
     pub redirection: parser::Redirection,
-    background_job_number: usize
+    background_job_number: usize,
+    jobs_list: Jobs
 }
 
 impl ShellCommand {
     pub fn new() -> Self {
         let utils = fs_utils::FSUtils::new();
         let output = output::Output::new();
+        let jobs = Jobs::new();
         ShellCommand {
             fs_utils: utils,
             output,
             redirection: parser::Redirection::Standart,
             background_job_number: 1,
+            jobs_list: jobs
         }
     }
 
@@ -62,6 +67,7 @@ impl ShellCommand {
     ) -> (Option<String>, Option<String>){
         let executable_file_name = self.fs_utils.is_executable(&input);
         if let Some(_) = executable_file_name {
+            let arg = arguments.clone();
             let output = Command::new(input)
                 .args(arguments)
                 .spawn()
@@ -70,7 +76,9 @@ impl ShellCommand {
             let number = self.background_job_number;
             self.background_job_number += 1;
             let result = format!("[{}] {}\n", number, command_id);
-
+            self.jobs_list.add_job(
+                Job::new(command_id, number, input.into(), &arg)
+            );
             return (Some(result), None);
         }
         (None, Some(format!("{}: command not found\n", input)))
@@ -218,7 +226,9 @@ impl ShellCommand {
     }
 
     pub fn jobs(&self) -> (Option<String>, Option<String>) {
-        return (None, None);
+        let all_jobs = self.jobs_list.get_all_jobs();
+        let str = all_jobs.join("\n") + "\n";
+        (Some(str), None)
     }
 
     pub fn run_command(
