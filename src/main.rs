@@ -53,6 +53,21 @@ impl ShellCommand {
         (Some(result), None)
     }
 
+    pub fn execute_in_background(
+        &self,
+        input: &String,
+        arguments: Vec<String>,
+    ){
+        let executable_file_name = self.fs_utils.is_executable(&input);
+        if let Some(_) = executable_file_name {
+            let output = Command::new(input)
+                .args(arguments)
+                .spawn()
+                .unwrap();
+            let _ = output.id();
+        }
+    }
+
     pub fn execute_in_pipeline(
         &self,
         input: &String,
@@ -209,6 +224,8 @@ impl ShellCommand {
 
         while let Some(comm) = iter.next() {
             let (command, redirection) = extract_redirection(&comm);
+            let background_command = command.last().unwrap().as_str() == "&";
+
             rl_history.add(&command.join(" "))?;
             self.redirection = redirection;
             self.output.sdtout(&String::new(), &self.redirection);
@@ -226,6 +243,11 @@ impl ShellCommand {
                 "history" => self.history(command[1..].to_vec(), rl_history),
                 "jobs" => self.jobs(),
                 _ => {
+                    if background_command {
+                        self.execute_in_background(&command[0], command[1..].to_vec());
+                        return Ok(());
+                    }
+
                     if iter.peek().is_some() {
                         let result = self.execute_in_pipeline(
                             &command[0],
