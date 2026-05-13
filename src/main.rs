@@ -227,6 +227,10 @@ impl ShellCommand {
 
     pub fn jobs(&self) -> (Option<String>, Option<String>) {
         let all_jobs = self.jobs_list.get_all_jobs();
+        if all_jobs.is_empty() {
+            return (None, None);
+        }
+
         let str = all_jobs.join("\n") + "\n";
         (Some(str), None)
     }
