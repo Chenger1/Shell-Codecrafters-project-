@@ -19,6 +19,7 @@ struct ShellCommand {
     pub fs_utils: fs_utils::FSUtils,
     output: output::Output,
     pub redirection: parser::Redirection,
+    background_job_number: usize
 }
 
 impl ShellCommand {
@@ -29,6 +30,7 @@ impl ShellCommand {
             fs_utils: utils,
             output,
             redirection: parser::Redirection::Standart,
+            background_job_number: 1,
         }
     }
 
@@ -54,18 +56,24 @@ impl ShellCommand {
     }
 
     pub fn execute_in_background(
-        &self,
+        &mut self,
         input: &String,
         arguments: Vec<String>,
-    ){
+    ) -> (Option<String>, Option<String>){
         let executable_file_name = self.fs_utils.is_executable(&input);
         if let Some(_) = executable_file_name {
             let output = Command::new(input)
                 .args(arguments)
                 .spawn()
                 .unwrap();
-            let _ = output.id();
+            let command_id = output.id();
+            let number = self.background_job_number;
+            self.background_job_number += 1;
+            let result = format!("[{}] {}\n", number, command_id);
+
+            return (Some(result), None);
         }
+        (None, Some(format!("{}: command not found\n", input)))
     }
 
     pub fn execute_in_pipeline(
@@ -223,40 +231,39 @@ impl ShellCommand {
         let mut children: Vec<Child> = Vec::new();
 
         while let Some(comm) = iter.next() {
-            let (command, redirection) = extract_redirection(&comm);
-            let background_command = command.last().unwrap().as_str() == "&";
-
-            rl_history.add(&command.join(" "))?;
+            let (mut command_and_args, redirection) = extract_redirection(&comm);
+            let mut command = command_and_args[0].as_str();
+            if command_and_args.last().unwrap().as_str() == "&" {
+                command_and_args.pop();
+                command = "execute_background";
+            }
+            rl_history.add(&command_and_args.join(" "))?;
             self.redirection = redirection;
             self.output.sdtout(&String::new(), &self.redirection);
             self.output.stderr(&String::new(), &self.redirection);
 
-            let (stdout, stderr): (Option<String>, Option<String>) = match command[0].as_str() {
+            let (stdout, stderr): (Option<String>, Option<String>) = match command {
                 "exit" => {
                     self.exit(rl_history);
                     std::process::exit(0)
                 },
                 "pwd" => self.pwd(),
-                "echo" => self.echo(command[1..].to_vec()),
-                "type" => self.type_(&command[1]),
-                "cd" => self.cd(&command[1]),
-                "history" => self.history(command[1..].to_vec(), rl_history),
+                "echo" => self.echo(command_and_args[1..].to_vec()),
+                "type" => self.type_(&command_and_args[1]),
+                "cd" => self.cd(&command_and_args[1]),
+                "history" => self.history(command_and_args[1..].to_vec(), rl_history),
                 "jobs" => self.jobs(),
+                "execute_background" => self.execute_in_background(&command_and_args[0], command_and_args[1..].to_vec()),
                 _ => {
-                    if background_command {
-                        self.execute_in_background(&command[0], command[1..].to_vec());
-                        return Ok(());
-                    }
-
                     if iter.peek().is_some() {
                         let result = self.execute_in_pipeline(
-                            &command[0],
-                            command[1..].to_vec(),
+                            &command_and_args[0],
+                            command_and_args[1..].to_vec(),
                             prev_prc.take(),
                             Stdio::piped(),
                         );
                         if result.is_none() {
-                            (None, Some(format!("{}: command not found\n", command[0])))
+                            (None, Some(format!("{}: command not found\n", command_and_args[0])))
                         } else {
                             let mut child = result.unwrap();
                             prev_prc = Some(Stdio::from(child.stdout.take().unwrap()));
@@ -278,15 +285,15 @@ impl ShellCommand {
                             _ => Stdio::inherit(),
                         };
                         let result = self.execute_in_pipeline(
-                            &command[0],
-                            command[1..].to_vec(),
+                            &command_and_args[0],
+                            command_and_args[1..].to_vec(),
                             prev_prc.take(),
                             stdout_stdio,
                         );
                         let mut stdout: Option<String> = None;
                         let mut stderr: Option<String> = None;
                         if result.is_none() {
-                            (None, Some(format!("{}: command not found\n", command[0])))
+                            (None, Some(format!("{}: command not found\n", command_and_args[0])))
                         } else {
                             if let Some(child) = result {
                                 let output = child.wait_with_output()?;
