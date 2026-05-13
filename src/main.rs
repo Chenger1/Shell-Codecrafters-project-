@@ -13,7 +13,7 @@ pub mod helper;
 pub mod output;
 pub mod parser;
 
-const BUILTIN_COMMANDS: [&'static str; 6] = ["echo", "exit", "type", "pwd", "cd", "history"];
+const BUILTIN_COMMANDS: [&'static str; 7] = ["echo", "exit", "type", "pwd", "cd", "history", "jobs"];
 
 struct ShellCommand {
     pub fs_utils: fs_utils::FSUtils,
@@ -194,6 +194,10 @@ impl ShellCommand {
         }
     }
 
+    pub fn jobs(&self) -> (Option<String>, Option<String>) {
+        return (None, None);
+    }
+
     pub fn run_command(
         &mut self,
         commands: Vec<Vec<String>>,
@@ -220,6 +224,7 @@ impl ShellCommand {
                 "type" => self.type_(&command[1]),
                 "cd" => self.cd(&command[1]),
                 "history" => self.history(command[1..].to_vec(), rl_history),
+                "jobs" => self.jobs(),
                 _ => {
                     if iter.peek().is_some() {
                         let result = self.execute_in_pipeline(
