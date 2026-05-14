@@ -95,6 +95,9 @@ impl Jobs{
             str.push_str("  ");
             str.push_str(&job.status_string());
             str.push_str(&job.command);
+            if job.status == Status::Running{
+                str.push_str(" &");
+            }
             result.push(str);
         }
         self.clean_done_jobs();
