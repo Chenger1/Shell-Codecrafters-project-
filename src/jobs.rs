@@ -53,16 +53,6 @@ pub struct Jobs{
 }
 
 impl Jobs{
-    pub fn new() -> Jobs{
-        Jobs{
-            active_jobs: HashMap::new(),
-        }
-    }
-
-    pub fn add_job(&mut self, job: Job){
-        self.active_jobs.insert(job.number, job);
-    }
-
     fn check_processes(&mut self){
         for job in self.active_jobs.values_mut(){
             match job.process.try_wait(){
@@ -76,6 +66,24 @@ impl Jobs{
 
     fn clean_done_jobs(&mut self){
         self.active_jobs.retain(|_, job| job.status == Status::Running);
+    }
+
+    pub fn new() -> Jobs{
+        Jobs{
+            active_jobs: HashMap::new(),
+        }
+    }
+
+    pub fn add_job(&mut self, job: Job){
+        self.active_jobs.insert(job.number, job);
+    }
+
+    pub fn get_next_job_number(&self) -> usize{
+        let mut number = 1;
+        while self.active_jobs.contains_key(&number){
+            number += 1;
+        }
+        number
     }
 
     pub fn get_all_jobs(&mut self, only_done: bool) -> Vec<String>{

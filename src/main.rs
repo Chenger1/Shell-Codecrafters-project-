@@ -21,7 +21,6 @@ struct ShellCommand {
     pub fs_utils: fs_utils::FSUtils,
     output: output::Output,
     pub redirection: parser::Redirection,
-    background_job_number: usize,
     jobs_list: Jobs
 }
 
@@ -34,7 +33,6 @@ impl ShellCommand {
             fs_utils: utils,
             output,
             redirection: parser::Redirection::Standart,
-            background_job_number: 1,
             jobs_list: jobs
         }
     }
@@ -73,8 +71,7 @@ impl ShellCommand {
                 .spawn()
                 .unwrap();
             let command_id = output.id();
-            let number = self.background_job_number;
-            self.background_job_number += 1;
+            let number = self.jobs_list.get_next_job_number();
             let result = format!("[{}] {}\n", number, command_id);
             self.jobs_list.add_job(
                 Job::new(output, number, input.into(), &arg)
