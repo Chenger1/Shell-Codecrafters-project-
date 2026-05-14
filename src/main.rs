@@ -226,7 +226,7 @@ impl ShellCommand {
     }
 
     pub fn jobs(&mut self) -> (Option<String>, Option<String>) {
-        let all_jobs = self.jobs_list.get_all_jobs();
+        let all_jobs = self.jobs_list.get_all_jobs(false);
         if all_jobs.is_empty() {
             return (None, None);
         }
@@ -379,6 +379,10 @@ fn main() -> Result<()> {
     }
 
     loop {
+        let jobs = shell_command.jobs_list.get_all_jobs(true);
+        if !jobs.is_empty() {
+            shell_command.output.sdtout(&format!("{}\n", jobs.join("\n")), &Redirection::Standart);
+        }
         let input = rl.readline("$ ")?;
         if input.is_empty() {
             continue;

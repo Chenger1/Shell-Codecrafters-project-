@@ -78,7 +78,7 @@ impl Jobs{
         self.active_jobs.retain(|_, job| job.status == Status::Running);
     }
 
-    pub fn get_all_jobs(&mut self) -> Vec<String>{
+    pub fn get_all_jobs(&mut self, only_done: bool) -> Vec<String>{
         self.check_processes();
 
         let mut result: Vec<String> = vec![];
@@ -86,6 +86,10 @@ impl Jobs{
         let mut jobs = self.active_jobs.values().collect::<Vec<_>>();
         jobs.sort_by(|a, b| a.number.cmp(&b.number));
         for (index, job) in jobs.iter().enumerate(){
+            if only_done && job.status != Status::Done{
+                continue
+            }
+
             let mut str = format!("[{}]", job.number);
             if index == active_jobs_len - 1{
                 str.push_str("+");
