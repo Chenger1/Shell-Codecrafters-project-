@@ -1,5 +1,8 @@
+use std::cmp::PartialEq;
 use std::collections::HashMap;
+use std::process::Child;
 
+#[derive(PartialEq, Eq)]
 enum Status{
     Running,
     Done,
@@ -15,17 +18,17 @@ impl Status{
 }
 
 pub struct Job{
-    pid: u32,
+    process: Child,
     number: usize,
     status: Status,
     command: String,
 }
 
 impl Job{
-    pub fn new(pid: u32, number: usize, command: String, arguments: &Vec<String>) -> Job{
+    pub fn new(process: Child, number: usize, command: String, arguments: &Vec<String>) -> Job{
         let command = format!("{} {}", command, arguments.join(" "));
         Job{
-            pid,
+            process,
             number,
             status: Status::Running,
             command,
@@ -60,7 +63,24 @@ impl Jobs{
         self.active_jobs.insert(job.number, job);
     }
 
-    pub fn get_all_jobs(&self) -> Vec<String>{
+    fn check_processes(&mut self){
+        for job in self.active_jobs.values_mut(){
+            match job.process.try_wait(){
+                Ok(Some(_)) => {
+                    job.status = Status::Done;
+                },
+                _ => {}
+            }
+        }
+    }
+
+    fn clean_done_jobs(&mut self){
+        self.active_jobs.retain(|_, job| job.status == Status::Running);
+    }
+
+    pub fn get_all_jobs(&mut self) -> Vec<String>{
+        self.check_processes();
+
         let mut result: Vec<String> = vec![];
         let active_jobs_len = self.active_jobs.len();
         for (index, job) in self.active_jobs.values().enumerate(){
@@ -77,6 +97,7 @@ impl Jobs{
             str.push_str(&job.command);
             result.push(str);
         }
+        self.clean_done_jobs();
         result
     }
 }

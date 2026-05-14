@@ -77,7 +77,7 @@ impl ShellCommand {
             self.background_job_number += 1;
             let result = format!("[{}] {}\n", number, command_id);
             self.jobs_list.add_job(
-                Job::new(command_id, number, input.into(), &arg)
+                Job::new(output, number, input.into(), &arg)
             );
             return (Some(result), None);
         }
@@ -225,7 +225,7 @@ impl ShellCommand {
         }
     }
 
-    pub fn jobs(&self) -> (Option<String>, Option<String>) {
+    pub fn jobs(&mut self) -> (Option<String>, Option<String>) {
         let all_jobs = self.jobs_list.get_all_jobs();
         if all_jobs.is_empty() {
             return (None, None);
