@@ -83,7 +83,9 @@ impl Jobs{
 
         let mut result: Vec<String> = vec![];
         let active_jobs_len = self.active_jobs.len();
-        for (index, job) in self.active_jobs.values().enumerate(){
+        let mut jobs = self.active_jobs.values().collect::<Vec<_>>();
+        jobs.sort_by(|a, b| a.number.cmp(&b.number));
+        for (index, job) in jobs.iter().enumerate(){
             let mut str = format!("[{}]", job.number);
             if index == active_jobs_len - 1{
                 str.push_str("+");
@@ -95,9 +97,6 @@ impl Jobs{
             str.push_str("  ");
             str.push_str(&job.status_string());
             str.push_str(&job.command);
-            if job.status == Status::Running{
-                str.push_str(" &");
-            }
             result.push(str);
         }
         self.clean_done_jobs();
