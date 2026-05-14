@@ -62,12 +62,16 @@ impl Jobs{
 
     pub fn get_all_jobs(&self) -> Vec<String>{
         let mut result: Vec<String> = vec![];
-        let mut iter = self.active_jobs.values().peekable();
-        while let Some(job) = iter.next(){
+        let active_jobs_len = self.active_jobs.len();
+        for (index, job) in self.active_jobs.values().enumerate(){
             let mut str = format!("[{}]", job.number);
-            if iter.peek().is_none(){
+            if index == active_jobs_len - 1{
                 str.push_str("+");
             }
+            if active_jobs_len >= 2 && index == active_jobs_len - 2{
+                str.push_str("-");
+            }
+
             str.push_str("  ");
             str.push_str(&job.status_string());
             str.push_str(&job.command);
