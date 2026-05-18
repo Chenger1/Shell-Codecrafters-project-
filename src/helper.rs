@@ -6,6 +6,8 @@ use rustyline::completion::Pair as RustyPair;
 use prefix_tree_rs::Trie;
 use rustyline::hint::HistoryHinter;
 
+use crate::program_completion::ProgrammableCompletor;
+
 pub struct CommandLineHelper{
     builtin_prefix_tree: Trie,
     path_prefix_tree: Trie,
@@ -16,6 +18,7 @@ pub struct CommandLineHelper{
     first_tab: RefCell<bool>,
     #[allow(unused)]
     hinter: HistoryHinter,
+    pub programmable_completor: ProgrammableCompletor
 }
 
 impl CommandLineHelper{
@@ -29,6 +32,7 @@ impl CommandLineHelper{
         for exec in &path_executables{
             path_trie.insert(exec.as_str());
         }
+        let programmable_completor = ProgrammableCompletor::new();
 
         CommandLineHelper { 
             builtin_prefix_tree:trie, 
@@ -39,6 +43,7 @@ impl CommandLineHelper{
             filename_completer: fc,
             first_tab: RefCell::new(false),
             hinter: HistoryHinter::new(),
+            programmable_completor
         }
     }
 

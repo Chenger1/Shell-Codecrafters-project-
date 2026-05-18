@@ -9,11 +9,14 @@ use std::{env, fs};
 use unescape::unescape;
 use jobs::{Jobs, Job};
 
+use crate::program_completion::ProgrammableCompletor;
+
 pub mod fs_utils;
 pub mod helper;
 pub mod output;
 pub mod parser;
 pub mod jobs;
+pub mod program_completion;
 
 const BUILTIN_COMMANDS: [&'static str; 8] = ["echo", "exit", "type", "pwd", "cd", "history", "jobs", "complete"];
 
@@ -232,25 +235,29 @@ impl ShellCommand {
         (Some(str), None)
     }
 
-    pub fn complete(&self, arguments: Vec<String>) -> (Option<String>, Option<String>){
-        if arguments.len() < 1{
+    pub fn complete(&self, arguments: Vec<String>, prog_completer: &mut ProgrammableCompletor) -> (Option<String>, Option<String>){
+        if arguments.len() < 2{
             return (None, Some(String::from("No command specified\n")));
         }
-        let is_specification = arguments[0] == "-p";
-        if is_specification{
-            if arguments.len() < 2{
-                return (None, Some(String::from("No command specified\n")));
+        if arguments[0] == "-p"{
+            let completion = prog_completer.get_completion(&arguments[1]);
+            if let Some(comp) = completion{
+                let res = format!("{}\n", comp);
+                return (Some(res), None);
             }
-
             return (None, Some(String::from(format!("complete: {}: no completion specification\n", arguments[1]))));
         }
+        if arguments[0] == "-C"{
+            prog_completer.register_completion(arguments[2].clone(), arguments[1].clone());
+        }
+
         (None, None)
     }
 
     pub fn run_command(
         &mut self,
         commands: Vec<Vec<String>>,
-        rl_history: &mut DefaultHistory,
+        rl_editor: &mut Editor<helper::CommandLineHelper, DefaultHistory>
     ) -> Result<()> {
         let mut iter = commands.iter().peekable();
         let mut prev_prc: Option<Stdio> = None;
@@ -263,23 +270,26 @@ impl ShellCommand {
                 command_and_args.pop();
                 command = "execute_background";
             }
-            rl_history.add(&command_and_args.join(" "))?;
+            rl_editor.add_history_entry(&command_and_args.join(" "))?;
             self.redirection = redirection;
             self.output.sdtout(&String::new(), &self.redirection);
             self.output.stderr(&String::new(), &self.redirection);
 
             let (stdout, stderr): (Option<String>, Option<String>) = match command {
                 "exit" => {
-                    self.exit(rl_history);
+                    self.exit(rl_editor.history_mut());
                     std::process::exit(0)
                 },
                 "pwd" => self.pwd(),
                 "echo" => self.echo(command_and_args[1..].to_vec()),
                 "type" => self.type_(&command_and_args[1]),
                 "cd" => self.cd(&command_and_args[1]),
-                "history" => self.history(command_and_args[1..].to_vec(), rl_history),
+                "history" => self.history(command_and_args[1..].to_vec(), rl_editor.history_mut()),
                 "jobs" => self.jobs(),
-                "complete" => self.complete(command_and_args[1..].to_vec()),
+                "complete" => {
+                    let helper = rl_editor.helper_mut().unwrap();
+                    self.complete(command_and_args[1..].to_vec(), &mut helper.programmable_completor)
+                },
                 "execute_background" => self.execute_in_background(&command_and_args[0], command_and_args[1..].to_vec()),
                 _ => {
                     if iter.peek().is_some() {
@@ -407,7 +417,6 @@ fn main() -> Result<()> {
         if commands.is_empty() {
             continue;
         }
-        let mut rl_history = rl.history_mut();
-        shell_command.run_command(commands, &mut rl_history)?;
+        shell_command.run_command(commands, &mut rl)?;
     }
 }
