@@ -20,7 +20,7 @@ impl Output{
         file.write_all(result.as_bytes()).unwrap();
     }
 
-    pub fn sdtout(&self, result: &String, redirection: &Redirection){
+    pub fn sdtout(&self, result: &String, redirection: &Redirection){        
         match redirection{
             Redirection::RedirectStdout(path) => self.redirect_to_file(result, path, false),
             Redirection::AppendStdout(path) => self.redirect_to_file(result, path, true),

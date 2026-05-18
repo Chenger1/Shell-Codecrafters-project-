@@ -232,6 +232,21 @@ impl ShellCommand {
         (Some(str), None)
     }
 
+    pub fn complete(&self, arguments: Vec<String>) -> (Option<String>, Option<String>){
+        if arguments.len() < 1{
+            return (None, Some(String::from("No command specified\n")));
+        }
+        let is_specification = arguments[0] == "-p";
+        if is_specification{
+            if arguments.len() < 2{
+                return (None, Some(String::from("No command specified\n")));
+            }
+
+            return (None, Some(String::from(format!("complete: {}: no completion specification\n", arguments[1]))));
+        }
+        (None, None)
+    }
+
     pub fn run_command(
         &mut self,
         commands: Vec<Vec<String>>,
@@ -264,6 +279,7 @@ impl ShellCommand {
                 "cd" => self.cd(&command_and_args[1]),
                 "history" => self.history(command_and_args[1..].to_vec(), rl_history),
                 "jobs" => self.jobs(),
+                "complete" => self.complete(command_and_args[1..].to_vec()),
                 "execute_background" => self.execute_in_background(&command_and_args[0], command_and_args[1..].to_vec()),
                 _ => {
                     if iter.peek().is_some() {
@@ -320,7 +336,6 @@ impl ShellCommand {
                     }
                 }
             };
-
             if stdout.is_some() {
                 if iter.peek().is_some() {
                     let (reader, mut writer) = std::io::pipe()?;
