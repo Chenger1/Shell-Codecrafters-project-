@@ -242,7 +242,7 @@ impl ShellCommand {
         if arguments[0] == "-p"{
             let completion = prog_completer.get_completion(&arguments[1]);
             if let Some(comp) = completion{
-                let res = format!("{}\n", comp);
+                let res = format!("complete -C '{}' git\n", comp);
                 return (Some(res), None);
             }
             return (None, Some(String::from(format!("complete: {}: no completion specification\n", arguments[1]))));
