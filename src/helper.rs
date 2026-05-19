@@ -164,7 +164,7 @@ impl Completer for CommandLineHelper {
                 }
                 let mut replacement = candidates[0].clone();
                 replacement.push(' ');
-                return Ok((replacement.len(), vec![RustyPair {
+                return Ok((pos, vec![RustyPair {
                         display: replacement.clone(),
                         replacement: replacement,
                     }]));
