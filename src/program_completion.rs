@@ -20,7 +20,7 @@ impl ProgrammableCompletor{
         self.completions.get(command)
     }
 
-    pub fn get_candidates(&self, command: &String) -> Option<Vec<String>>{
+    pub fn get_candidates(&self, command: &String) -> Option<(Vec<String>, usize)>{
         if !command.ends_with(" ") && !command.contains(" "){
             return None;
         }
@@ -30,11 +30,13 @@ impl ProgrammableCompletor{
         if file_path.is_none(){
             return None;
         }
-
+        
+        let mut pos = command.len();
         let mut completions: Vec<String> = vec!{};
         if let Some(path) = file_path{
 
             let arg_2 = words.last().unwrap().to_string();
+            pos -= arg_2.len();
             let mut arg_3= String::from("");
             if words.len() > 2{
                 arg_3 = words[words.len()-2].to_string();
@@ -50,6 +52,6 @@ impl ProgrammableCompletor{
                 completions.push(candidate.to_string().trim().to_string());
             }
         }
-        Some(completions)
+        Some((completions, pos))
     }
 }
