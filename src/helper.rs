@@ -152,16 +152,15 @@ impl Completer for CommandLineHelper {
             pos: usize,
             ctx: &rustyline::Context<'_>,
         ) -> rustyline::Result<(usize, Vec<Self::Candidate>)> {
-            if line.ends_with(" "){
-                let candidates = self.programmable_completor.get_candidates(&line.to_string());
-                if let Some(candidates) = candidates{
-                    let mut replacement = candidates[0].clone();
-                    replacement.push(' ');
-                    return Ok((pos, vec![RustyPair {
-                            display: replacement.clone(),
-                            replacement: replacement,
-                        }]));
-                }
+            let candidates = self.programmable_completor.get_candidates(&line.to_string());
+            if let Some(candidates) = candidates{
+                let mut replacement = candidates[0].clone();
+                let new_pos = pos - replacement.len() + 1;
+                replacement.push(' ');
+                return Ok((new_pos, vec![RustyPair {
+                        display: replacement.clone(),
+                        replacement: replacement,
+                    }]));
             }
 
             if let Some(result) = self.filename_completion(line, pos, ctx){

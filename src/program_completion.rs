@@ -21,12 +21,11 @@ impl ProgrammableCompletor{
     }
 
     pub fn get_candidates(&self, command: &String) -> Option<Vec<String>>{
-        if !command.ends_with(" "){
+        if !command.ends_with(" ") && !command.contains(" "){
             return None;
         }
         let words: Vec<&str> = command.split(" ").collect();
         let arg_1 = words[0].to_string();
-
         let file_path = self.completions.get(arg_1.trim());
         if file_path.is_none(){
             return None;
