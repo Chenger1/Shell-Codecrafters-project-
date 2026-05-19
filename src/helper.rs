@@ -154,10 +154,17 @@ impl Completer for CommandLineHelper {
         ) -> rustyline::Result<(usize, Vec<Self::Candidate>)> {
             let candidates = self.programmable_completor.get_candidates(&line.to_string());
             if let Some(candidates) = candidates{
+                if candidates.len() == 0{
+                    print!("\x07");
+                    io::stdout().flush().unwrap();
+                    return Ok((0, vec![RustyPair {
+                        display: line.to_string(),
+                        replacement: line.to_string(),
+                    }]));
+                }
                 let mut replacement = candidates[0].clone();
-                let new_pos = pos - replacement.len() + 1;
                 replacement.push(' ');
-                return Ok((new_pos, vec![RustyPair {
+                return Ok((replacement.len(), vec![RustyPair {
                         display: replacement.clone(),
                         replacement: replacement,
                     }]));
