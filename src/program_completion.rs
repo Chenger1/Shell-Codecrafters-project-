@@ -8,7 +8,7 @@ pub struct ProgrammableCompletor{
 
 impl ProgrammableCompletor{
     pub fn new() -> ProgrammableCompletor{
-        let mut completions = HashMap::new();
+        let completions = HashMap::new();
         ProgrammableCompletor { completions }
     }
 
@@ -41,7 +41,6 @@ impl ProgrammableCompletor{
                 arg_3 = words[words.len()-2].to_string();
             }
             let args: Vec<String> = vec![arg_1, arg_2, arg_3];
-            println!("{:?}", args);
 
             let output = Command::new(path).args(args).output().expect("failed to execute process");
             let res = String::from_utf8_lossy(&output.stdout);
