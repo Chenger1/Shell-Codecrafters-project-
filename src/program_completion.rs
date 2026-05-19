@@ -8,7 +8,7 @@ pub struct ProgrammableCompletor{
 
 impl ProgrammableCompletor{
     pub fn new() -> ProgrammableCompletor{
-        let completions = HashMap::new();
+        let mut completions = HashMap::new();
         ProgrammableCompletor { completions }
     }
 
@@ -24,12 +24,17 @@ impl ProgrammableCompletor{
         if !command.ends_with(" "){
             return None;
         }
+        let words: Vec<&str> = command.split(" ").collect();
+        let arg_1 = words[0].to_string();
 
-        let file_path = self.completions.get(command.trim());
+        let file_path = self.completions.get(arg_1.trim());
+        if file_path.is_none(){
+            return None;
+        }
+
         let mut completions: Vec<String> = vec!{};
         if let Some(path) = file_path{
-            let words: Vec<&str> = command.split(" ").collect();
-            let arg_1 = words[0].to_string();
+
             let arg_2 = words.last().unwrap().to_string();
             let mut arg_3= String::from("");
             if words.len() > 2{

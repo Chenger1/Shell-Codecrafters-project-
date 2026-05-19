@@ -152,7 +152,7 @@ impl Completer for CommandLineHelper {
             pos: usize,
             ctx: &rustyline::Context<'_>,
         ) -> rustyline::Result<(usize, Vec<Self::Candidate>)> {
-            if line.ends_with(" ") && self.programmable_completor.get_completion_info(&line.to_string().trim().to_string()).is_some(){
+            if line.ends_with(" "){
                 let candidates = self.programmable_completor.get_candidates(&line.to_string());
                 if let Some(candidates) = candidates{
                     let mut replacement = candidates[0].clone();
