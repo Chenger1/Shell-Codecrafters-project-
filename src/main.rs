@@ -240,7 +240,7 @@ impl ShellCommand {
             return (None, Some(String::from("No command specified\n")));
         }
         if arguments[0] == "-p"{
-            let completion = prog_completer.get_completion(&arguments[1]);
+            let completion = prog_completer.get_completion_info(&arguments[1]);
             if let Some(comp) = completion{
                 let res = format!("complete -C '{}' {}\n", comp, &arguments[1]);
                 return (Some(res), None);
