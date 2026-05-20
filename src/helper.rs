@@ -152,7 +152,7 @@ impl Completer for CommandLineHelper {
             pos: usize,
             ctx: &rustyline::Context<'_>,
         ) -> rustyline::Result<(usize, Vec<Self::Candidate>)> {
-            let programmable_res = self.programmable_completor.get_candidates(&line.to_string());
+            let programmable_res = self.programmable_completor.get_candidates(&line.to_string(), &pos);
             if let Some(res) = programmable_res{
                 let (candidates, new_pos) = res;
                 if candidates.len() == 0{

@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::process::Command;
+use std::env;
 
 pub struct ProgrammableCompletor{
     completions: HashMap<String, String>
@@ -20,7 +21,7 @@ impl ProgrammableCompletor{
         self.completions.get(command)
     }
 
-    pub fn get_candidates(&self, command: &String) -> Option<(Vec<String>, usize)>{
+    pub fn get_candidates(&self, command: &String, original_position: &usize) -> Option<(Vec<String>, usize)>{
         if !command.ends_with(" ") && !command.contains(" "){
             return None;
         }
@@ -34,6 +35,10 @@ impl ProgrammableCompletor{
         let mut pos = command.len();
         let mut completions: Vec<String> = vec!{};
         if let Some(path) = file_path{
+            unsafe{
+                env::set_var("COMP_LINE", "");
+                env::set_var("COMP_POINT", original_position.to_string());
+            }
 
             let arg_2 = words.last().unwrap().to_string();
             pos -= arg_2.len();
