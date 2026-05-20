@@ -36,7 +36,7 @@ impl ProgrammableCompletor{
         let mut completions: Vec<String> = vec!{};
         if let Some(path) = file_path{
             unsafe{
-                env::set_var("COMP_LINE", "");
+                env::set_var("COMP_LINE", command);
                 env::set_var("COMP_POINT", original_position.to_string());
             }
 
