@@ -43,9 +43,11 @@ impl ProgrammableCompletor{
             let arg_2 = words.last().unwrap().to_string();
             pos -= arg_2.len();
             let mut arg_3= String::from("");
-            if words.len() > 2{
-                arg_3 = words[words.len()-2].to_string();
+            if let Some(val) = words.len().checked_sub(2).and_then(|idx| words.get(idx)){
+                arg_3 = val.to_string();
+                println!("{}", arg_3);
             }
+
             let args: Vec<String> = vec![arg_1, arg_2, arg_3];
 
             let output = Command::new(path).args(args).output().expect("failed to execute process");
