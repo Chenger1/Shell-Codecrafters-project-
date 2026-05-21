@@ -45,7 +45,6 @@ impl ProgrammableCompletor{
             let mut arg_3= String::from("");
             if let Some(val) = words.len().checked_sub(2).and_then(|idx| words.get(idx)){
                 arg_3 = val.to_string();
-                println!("{}", arg_3);
             }
 
             let args: Vec<String> = vec![arg_1, arg_2, arg_3];
