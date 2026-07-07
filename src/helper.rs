@@ -192,7 +192,6 @@ impl CommandLineHelper {
             )));
         }
         if let Some(_) = self.last_prompt.take() {
-            // println!("\n{}", candidates.join("  "));
             return Some(Ok((
                 0,
                 vec![RustyPair {

@@ -250,6 +250,9 @@ impl ShellCommand {
         if arguments[0] == "-C"{
             prog_completer.register_completion(arguments[2].clone(), arguments[1].clone());
         }
+        if arguments[0] == "-r"{
+            prog_completer.remove_completion(arguments[1].clone());
+        }
 
         (None, None)
     }
