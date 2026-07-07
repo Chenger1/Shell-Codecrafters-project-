@@ -71,23 +71,27 @@ impl CommandLineHelper {
         matches
     }
 
-    fn find_longest_common_prefix(&self, words: &Vec<String>) -> String {
-        if words.is_empty() {
+    fn find_longest_common_prefix(&self, strs: &Vec<String>) -> String {
+        if strs.is_empty() {
             return String::new();
         }
 
-        let mut prefix = words[0].clone();
+        let mut prefix = &strs[0][..];
 
-        for word in &words[1..] {
-            while !word.starts_with(prefix.as_str()) {
-                prefix.pop();
+        for s in &strs[1..] {
+            while !s.starts_with(prefix) {
                 if prefix.is_empty() {
                     return String::new();
                 }
+                // Shorten the prefix by one character
+                let mut len = prefix.len();
+                while !prefix.is_char_boundary(len - 1) {
+                    len -= 1;
+                }
+                prefix = &prefix[..len - 1];
             }
         }
-
-        prefix
+        prefix.to_string()
     }
 
     fn filename_completion(
@@ -178,7 +182,7 @@ impl CommandLineHelper {
             filter(|candidate| candidate.starts_with(&arg_1)).
             collect();
         let prefix = self.find_longest_common_prefix(&filtered_candidates);
-        if prefix.len() > line.len() {
+        if prefix.len() > arg_1.len() {
             return Some(Ok((
                 new_pos,
                 vec![RustyPair {
