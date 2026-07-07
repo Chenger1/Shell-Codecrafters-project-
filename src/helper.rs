@@ -235,6 +235,7 @@ impl Completer for CommandLineHelper {
             .get_candidates(&line.to_string(), &pos);
         if let Some(res) = programmable_res {
             let (candidates, new_pos) = res;
+            // TODOL find candidates who already starts with line and then pass it to LCP
             if let Some(res) = self.multiple_completions(candidates, &line.to_string(), Some(new_pos)){
                 return res;
             }
