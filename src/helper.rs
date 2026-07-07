@@ -175,7 +175,7 @@ impl CommandLineHelper {
         }
 
         let words: Vec<&str> = line.split(" ").collect();
-        let arg_1 = words[1].to_string();
+        let arg_1 = if words.len() > 1 {words[1].to_string()} else {words[0].to_string()};
         let filtered_candidates: Vec<String> = candidates.
             clone().
             into_iter().
