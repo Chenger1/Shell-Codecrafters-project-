@@ -270,7 +270,7 @@ impl ShellCommand {
             let description = self.declared_variables.get(arguments[2].clone());
             return if let Some(description) = description {
                 (Some(
-                    String::from(format!("declare -- {}={}\n", command, description))
+                    String::from(format!("declare -- {}=\"{}\"\n", command, description))
                 ), None)
             } else {
                 (None, Some(String::from(format!("declare: {}: not found\n", command))))
