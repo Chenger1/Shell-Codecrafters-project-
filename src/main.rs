@@ -294,7 +294,7 @@ impl ShellCommand {
                     self.complete(command_and_args[1..].to_vec(), &mut helper.programmable_completor)
                 },
                 "declare" => {
-                    (None, Some(String::from(format!("declare: {}: not found", command_and_args[1]))))
+                    (None, Some(String::from(format!("declare: {}: not found", command_and_args[2]))))
                 },
                 "execute_background" => self.execute_in_background(&command_and_args[0], command_and_args[1..].to_vec()),
                 _ => {
