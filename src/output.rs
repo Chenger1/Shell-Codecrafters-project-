@@ -38,7 +38,7 @@ impl Output{
             Redirection::AppendStderr(path) => self.redirect_to_file(result, path, true),
             _ => {
                 if !result.is_empty(){
-                    eprint!("{}\n", result)
+                    eprint!("{}", result)
                 }
             }
         }
