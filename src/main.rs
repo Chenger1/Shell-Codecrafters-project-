@@ -8,7 +8,7 @@ use std::process::{Child, Command, Stdio};
 use std::{env, fs};
 use unescape::unescape;
 use jobs::{Jobs, Job};
-
+use crate::declare::DeclaredVariables;
 use crate::program_completion::ProgrammableCompletor;
 
 pub mod fs_utils;
@@ -17,6 +17,7 @@ pub mod output;
 pub mod parser;
 pub mod jobs;
 pub mod program_completion;
+pub mod declare;
 
 const BUILTIN_COMMANDS: [&'static str; 9] = ["echo", "exit", "type", "pwd", "cd", "history", "jobs", "complete", "declare"];
 
@@ -24,7 +25,8 @@ struct ShellCommand {
     pub fs_utils: fs_utils::FSUtils,
     output: output::Output,
     pub redirection: parser::Redirection,
-    jobs_list: Jobs
+    jobs_list: Jobs,
+    declared_variables: DeclaredVariables
 }
 
 impl ShellCommand {
@@ -36,7 +38,8 @@ impl ShellCommand {
             fs_utils: utils,
             output,
             redirection: parser::Redirection::Standart,
-            jobs_list: jobs
+            jobs_list: jobs,
+            declared_variables: DeclaredVariables::new()
         }
     }
 
@@ -257,6 +260,33 @@ impl ShellCommand {
         (None, None)
     }
 
+    fn declare(&mut self, arguments: &Vec<String>) -> (Option<String>, Option<String>) {
+        if arguments.len() < 2{
+            return (None, Some(String::from("No command specified\n")));
+        }
+
+        if arguments[1] == "-p"{
+            let command = arguments[2].clone();
+            let description = self.declared_variables.get(arguments[2].clone());
+            return if let Some(description) = description {
+                (Some(
+                    String::from(format!("declare -- {}={}\n", command, description))
+                ), None)
+            } else {
+                (None, Some(String::from(format!("declare: {}: not found\n", command))))
+            }
+        }
+
+        if arguments[1].contains("="){
+            if let Some((comm, description)) = arguments[1].split_once("="){
+                self.declared_variables.register(comm.to_string(), description.to_string());
+            }
+        }
+
+        (None, None)
+
+    }
+
     pub fn run_command(
         &mut self,
         commands: Vec<Vec<String>>,
@@ -293,9 +323,7 @@ impl ShellCommand {
                     let helper = rl_editor.helper_mut().unwrap();
                     self.complete(command_and_args[1..].to_vec(), &mut helper.programmable_completor)
                 },
-                "declare" => {
-                    (None, Some(String::from(format!("declare: {}: not found\n", command_and_args[2]))))
-                },
+                "declare" => self.declare(&command_and_args),
                 "execute_background" => self.execute_in_background(&command_and_args[0], command_and_args[1..].to_vec()),
                 _ => {
                     if iter.peek().is_some() {
