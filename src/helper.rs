@@ -170,7 +170,14 @@ impl CommandLineHelper {
             )));
         }
 
-        let prefix = self.find_longest_common_prefix(&candidates);
+        let words: Vec<&str> = line.split(" ").collect();
+        let arg_1 = words[1].to_string();
+        let filtered_candidates: Vec<String> = candidates.
+            clone().
+            into_iter().
+            filter(|candidate| candidate.starts_with(&arg_1)).
+            collect();
+        let prefix = self.find_longest_common_prefix(&filtered_candidates);
         if prefix.len() > line.len() {
             return Some(Ok((
                 new_pos,
@@ -235,7 +242,6 @@ impl Completer for CommandLineHelper {
             .get_candidates(&line.to_string(), &pos);
         if let Some(res) = programmable_res {
             let (candidates, new_pos) = res;
-            // TODOL find candidates who already starts with line and then pass it to LCP
             if let Some(res) = self.multiple_completions(candidates, &line.to_string(), Some(new_pos)){
                 return res;
             }

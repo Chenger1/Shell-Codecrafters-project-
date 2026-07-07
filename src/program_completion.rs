@@ -10,7 +10,7 @@ pub struct ProgrammableCompletor{
 impl ProgrammableCompletor{
     pub fn new() -> ProgrammableCompletor{
         let mut completions = HashMap::new();
-        completions.insert("git".to_string(), "./script.py".to_string());
+        completions.insert("git".to_string(), "./src/script.py".to_string());
         ProgrammableCompletor { completions }
     }
 
