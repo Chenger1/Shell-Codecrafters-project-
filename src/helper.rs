@@ -11,7 +11,7 @@ use crate::program_completion::ProgrammableCompletor;
 pub struct CommandLineHelper {
     builtin_prefix_tree: Trie,
     path_prefix_tree: Trie,
-    builtin_command: [&'static str; 8],
+    builtin_command: [&'static str; 9],
     path_names: Vec<String>,
     last_prompt: RefCell<Option<String>>,
     filename_completer: FilenameCompleter,
@@ -22,7 +22,7 @@ pub struct CommandLineHelper {
 }
 
 impl CommandLineHelper {
-    pub fn new(command: [&'static str; 8], path_executables: Vec<String>) -> CommandLineHelper {
+    pub fn new(command: [&'static str; 9], path_executables: Vec<String>) -> CommandLineHelper {
         let fc = FilenameCompleter::new();
         let mut trie = Trie::new();
         for word in command {

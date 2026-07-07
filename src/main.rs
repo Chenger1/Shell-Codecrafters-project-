@@ -18,7 +18,7 @@ pub mod parser;
 pub mod jobs;
 pub mod program_completion;
 
-const BUILTIN_COMMANDS: [&'static str; 8] = ["echo", "exit", "type", "pwd", "cd", "history", "jobs", "complete"];
+const BUILTIN_COMMANDS: [&'static str; 9] = ["echo", "exit", "type", "pwd", "cd", "history", "jobs", "complete", "declare"];
 
 struct ShellCommand {
     pub fs_utils: fs_utils::FSUtils,
