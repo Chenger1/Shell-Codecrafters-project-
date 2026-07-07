@@ -9,13 +9,16 @@ pub struct ProgrammableCompletor{
 
 impl ProgrammableCompletor{
     pub fn new() -> ProgrammableCompletor{
-        let mut completions = HashMap::new();
-        completions.insert("git".to_string(), "./src/script.py".to_string());
+        let completions = HashMap::new();
         ProgrammableCompletor { completions }
     }
 
     pub fn register_completion(&mut self, command: String, path: String){
         self.completions.insert(command, path);
+    }
+
+    pub fn remove_completion(&mut self, command: String){
+        self.completions.remove(&command);
     }
 
     pub fn get_completion_info(&self, command: &String) -> Option<&String>{
