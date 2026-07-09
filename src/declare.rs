@@ -11,12 +11,12 @@ impl DeclaredVariables{
         DeclaredVariables{store: HashMap::new()}
     }
 
-    pub fn validate_command(&self, command: String) -> bool{
-        let first_ok = match command.as_str().chars().next(){
+    pub fn validate_command(&self, command: &str) -> bool{
+        let first_ok = match command.chars().next(){
             Some(c) => c.is_alphabetic() || c == '_',
             None => false
         };
-        first_ok && command.as_str().chars().all(|c| c.is_alphanumeric() || c == '_')
+        first_ok && command.chars().all(|c| c.is_alphanumeric() || c == '_')
 
     }
 
