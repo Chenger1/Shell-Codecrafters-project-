@@ -12,10 +12,12 @@ impl DeclaredVariables{
     }
 
     pub fn validate_command(&self, command: String) -> bool{
-        match command.as_str().chars().next(){
+        let first_ok = match command.as_str().chars().next(){
             Some(c) => c.is_alphabetic() || c == '_',
             None => false
-        }
+        };
+        first_ok && command.as_str().chars().all(|c| c.is_alphanumeric() || c == '_')
+
     }
 
     pub fn register(&mut self, command: String, description: String){
