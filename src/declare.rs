@@ -31,7 +31,12 @@ impl DeclaredVariables{
     pub fn substitute_variables(&self, commands: Vec<Vec<String>>) -> Vec<Vec<String>> {
         commands
             .into_iter()
-            .map(|part| part.into_iter().map(|comm| self.substitute_in_token(&comm)).collect())
+            .map(|part| {
+                part.into_iter()
+                    .map(|comm| self.substitute_in_token(&comm))
+                    .filter(|comm| !comm.is_empty())
+                    .collect()
+            })
             .collect()
     }
 
