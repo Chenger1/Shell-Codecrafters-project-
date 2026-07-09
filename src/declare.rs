@@ -29,30 +29,89 @@ impl DeclaredVariables{
     }
 
     pub fn substitute_variables(&self, commands: Vec<Vec<String>>) -> Vec<Vec<String>> {
-        let mut new_vector: Vec<Vec<String>> = Vec::new();
+        commands
+            .into_iter()
+            .map(|part| part.into_iter().map(|comm| self.substitute_in_token(&comm)).collect())
+            .collect()
+    }
 
-        for part in commands {
-            let mut new_part: Vec<String> = Vec::new();
-            for comm in part {
-                let mut found = false;
+    fn substitute_in_token(&self, comm: &str) -> String {
+        let mut result = String::with_capacity(comm.len());
+        let mut chars = comm.char_indices().peekable();
 
-                for key in self.store.keys(){
-                    let value = self.store.get(key).unwrap();
-                    let key_with_sign = format!("{}{}", "$", key);
-                    if comm.contains(key_with_sign.as_str()){
-                        let new_comm = comm.replace(key_with_sign.as_str(), value);
-                        new_part.push(new_comm);
-                        found = true;
-                        break
+        while let Some((i, c)) = chars.next() {
+            if c != '$' {
+                result.push(c);
+                continue;
+            }
+
+            // Check what follows '$' to decide which syntax we're parsing.
+            if let Some(&(brace_start, '{')) = chars.peek() {
+                // Braced form: ${name} — consume the '{'.
+                chars.next();
+                let name_start = brace_start + 1; // just after '{'
+                let mut name_end = name_start;
+                let mut closed = false;
+
+                // Scan until we hit '}', consuming everything in between
+                // as the variable name (no character-class restriction needed,
+                // since '}' unambiguously marks the end).
+                while let Some(&(j, ch)) = chars.peek() {
+                    if ch == '}' {
+                        chars.next(); // consume the closing brace
+                        closed = true;
+                        break;
                     }
+                    name_end = j + ch.len_utf8();
+                    chars.next();
                 }
-                if !found {
-                    new_part.push(comm);
+
+                if closed {
+                    let var_name = &comm[name_start..name_end];
+                    match self.store.get(var_name) {
+                        Some(value) => result.push_str(value),
+                        // Not found — keep the original "${name}" text unchanged.
+                        None => {
+                            result.push_str("${");
+                            result.push_str(var_name);
+                            result.push('}');
+                        }
+                    }
+                } else {
+                    // No closing brace found before the string ended — treat
+                    // as literal text rather than a valid substitution, since
+                    // there's no well-formed variable name to resolve.
+                    result.push_str("${");
+                    result.push_str(&comm[name_start..name_end]);
+                }
+
+                continue;
+            }
+
+            // Unbraced form: $name — same as before, greedily consume
+            // identifier characters (letters, digits, underscore).
+            let start = i + 1;
+            let mut end = start;
+
+            while let Some(&(j, ch)) = chars.peek() {
+                if ch.is_alphanumeric() || ch == '_' {
+                    end = j + ch.len_utf8();
+                    chars.next();
+                } else {
+                    break;
                 }
             }
-            new_vector.push(new_part);
+
+            let var_name = &comm[start..end];
+            match self.store.get(var_name) {
+                Some(value) => result.push_str(value),
+                None => {
+                    result.push('$');
+                    result.push_str(var_name);
+                }
+            }
         }
 
-        new_vector
+        result
     }
 }
