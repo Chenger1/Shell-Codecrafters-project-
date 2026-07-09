@@ -267,7 +267,7 @@ impl ShellCommand {
 
         if arguments[1] == "-p"{
             let command = arguments[2].clone();
-            let description = self.declared_variables.get(arguments[2].clone());
+            let description = self.declared_variables.get(&arguments[2]);
             return if let Some(description) = description {
                 (Some(
                     String::from(format!("declare -- {}=\"{}\"\n", command, description))
@@ -296,6 +296,7 @@ impl ShellCommand {
         commands: Vec<Vec<String>>,
         rl_editor: &mut Editor<helper::CommandLineHelper, DefaultHistory>
     ) -> Result<()> {
+        let commands = self.declared_variables.substitute_variables(commands);
         let mut iter = commands.iter().peekable();
         let mut prev_prc: Option<Stdio> = None;
         let mut children: Vec<Child> = Vec::new();
