@@ -105,10 +105,7 @@ impl DeclaredVariables{
             let var_name = &comm[start..end];
             match self.store.get(var_name) {
                 Some(value) => result.push_str(value),
-                None => {
-                    result.push('$');
-                    result.push_str(var_name);
-                }
+                None => {}
             }
         }
 
