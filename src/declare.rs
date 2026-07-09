@@ -37,78 +37,44 @@ impl DeclaredVariables{
 
     fn substitute_in_token(&self, comm: &str) -> String {
         let mut result = String::with_capacity(comm.len());
-        let mut chars = comm.char_indices().peekable();
+        let mut rest = comm;
 
-        while let Some((i, c)) = chars.next() {
-            if c != '$' {
-                result.push(c);
-                continue;
-            }
+        while let Some(dollar_pos) = rest.find('$') {
+            result.push_str(&rest[..dollar_pos]);
+            rest = &rest[dollar_pos + 1..];
 
-            // Check what follows '$' to decide which syntax we're parsing.
-            if let Some(&(brace_start, '{')) = chars.peek() {
-                // Braced form: ${name} — consume the '{'.
-                chars.next();
-                let name_start = brace_start + 1; // just after '{'
-                let mut name_end = name_start;
-                let mut closed = false;
-
-                // Scan until we hit '}', consuming everything in between
-                // as the variable name (no character-class restriction needed,
-                // since '}' unambiguously marks the end).
-                while let Some(&(j, ch)) = chars.peek() {
-                    if ch == '}' {
-                        chars.next(); // consume the closing brace
-                        closed = true;
-                        break;
-                    }
-                    name_end = j + ch.len_utf8();
-                    chars.next();
-                }
-
-                if closed {
-                    let var_name = &comm[name_start..name_end];
-                    match self.store.get(var_name) {
-                        Some(value) => result.push_str(value),
-                        // Not found — keep the original "${name}" text unchanged.
-                        None => {
-                            result.push_str("${");
-                            result.push_str(var_name);
-                            result.push('}');
+            if let Some(braced) = rest.strip_prefix('{') {
+                match braced.find('}') {
+                    Some(end) => {
+                        let name = &braced[..end];
+                        // If not found, push nothing — the variable
+                        // contributes an empty string, per shell semantics.
+                        if let Some(value) = self.store.get(name) {
+                            result.push_str(value);
                         }
+                        rest = &braced[end + 1..];
                     }
-                } else {
-                    // No closing brace found before the string ended — treat
-                    // as literal text rather than a valid substitution, since
-                    // there's no well-formed variable name to resolve.
-                    result.push_str("${");
-                    result.push_str(&comm[name_start..name_end]);
+                    None => {
+                        // Unterminated brace — still no valid name to resolve,
+                        // so this stays literal (not really a "variable" at all).
+                        result.push_str("${");
+                        rest = braced;
+                    }
                 }
-
-                continue;
-            }
-
-            // Unbraced form: $name — same as before, greedily consume
-            // identifier characters (letters, digits, underscore).
-            let start = i + 1;
-            let mut end = start;
-
-            while let Some(&(j, ch)) = chars.peek() {
-                if ch.is_alphanumeric() || ch == '_' {
-                    end = j + ch.len_utf8();
-                    chars.next();
-                } else {
-                    break;
+            } else {
+                let end = rest
+                    .find(|c: char| !(c.is_alphanumeric() || c == '_'))
+                    .unwrap_or(rest.len());
+                let name = &rest[..end];
+                // Same here: missing variable expands to nothing.
+                if let Some(value) = self.store.get(name) {
+                    result.push_str(value);
                 }
-            }
-
-            let var_name = &comm[start..end];
-            match self.store.get(var_name) {
-                Some(value) => result.push_str(value),
-                None => {}
+                rest = &rest[end..];
             }
         }
 
+        result.push_str(rest);
         result
     }
 }
