@@ -33,18 +33,20 @@ impl DeclaredVariables{
 
         for part in commands {
             let mut new_part: Vec<String> = Vec::new();
-
             for comm in part {
-                if !comm.starts_with("$") {
-                    new_part.push(comm);
-                    continue;
-                }
+                let mut found = false;
 
-                let comm = comm.replace("$", "").trim().to_string();
-                let description = self.get(&comm);
-                if let Some(description) = description {
-                    new_part.push(description.clone());
-                } else {
+                for key in self.store.keys(){
+                    let value = self.store.get(key).unwrap();
+                    let key_with_sign = format!("{}{}", "$", key);
+                    if comm.contains(key_with_sign.as_str()){
+                        let new_comm = comm.replace(key_with_sign.as_str(), value);
+                        new_part.push(new_comm);
+                        found = true;
+                        break
+                    }
+                }
+                if !found {
                     new_part.push(comm);
                 }
             }
