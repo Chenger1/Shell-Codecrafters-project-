@@ -279,6 +279,10 @@ impl ShellCommand {
 
         if arguments[1].contains("="){
             if let Some((comm, description)) = arguments[1].split_once("="){
+                if !self.declared_variables.validate_command(arguments[1].clone()){
+                    return (None, Some(String::from(format!("declare: `{}': not a valid identifier\n", arguments[1]))));
+                }
+
                 self.declared_variables.register(comm.to_string(), description.to_string());
             }
         }
